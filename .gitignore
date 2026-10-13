@@ -1,0 +1,13 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+# Next.js
+node_modules/
+.next/
+out/
+.env*.local
+# Secrets
+appsettings.Development.json
+secrets.json

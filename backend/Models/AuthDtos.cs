@@ -1,0 +1,43 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace ProductApi.Models;
+
+public class RegisterRequest
+{
+    [Required(ErrorMessage = "Name is required.")]
+    [StringLength(100, ErrorMessage = "Name must be 100 characters or fewer.")]
+    public string Name { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Email is required.")]
+    [EmailAddress(ErrorMessage = "Enter a valid email address.")]
+    [StringLength(255)]
+    public string Email { get; set; } = string.Empty;
+
+    // BCrypt only uses the first 72 bytes, so we cap the length at 72.
+    [Required(ErrorMessage = "Password is required.")]
+    [StringLength(72, MinimumLength = 8, ErrorMessage = "Password must be between 8 and 72 characters.")]
+    public string Password { get; set; } = string.Empty;
+}
+
+public class LoginRequest
+{
+    [Required(ErrorMessage = "Email is required.")]
+    public string Email { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Password is required.")]
+    public string Password { get; set; } = string.Empty;
+}
+
+public class UserDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+}
+
+public class AuthResponse
+{
+    public string Token { get; set; } = string.Empty;
+    public DateTime ExpiresAt { get; set; }
+    public UserDto User { get; set; } = new();
+}

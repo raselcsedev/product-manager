@@ -1,0 +1,161 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import AuthGuard from "@/components/AuthGuard";
+import { useAuth } from "@/context/AuthContext";
+
+const iconClass = "h-5 w-5 shrink-0";
+
+const menu = [
+  {
+    label: "Dashboard",
+    href: "/",
+    isActive: (p: string) => p === "/",
+    icon: (
+      <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M3 13h8V3H3v10zm10 8h8V11h-8v10zM3 21h8v-6H3v6zM13 3v6h8V3h-8z" />
+      </svg>
+    ),
+  },
+  {
+    label: "Products",
+    href: "/products",
+    isActive: (p: string) => p === "/products" || p.startsWith("/products/edit"),
+    icon: (
+      <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8" />
+      </svg>
+    ),
+  },
+  {
+    label: "Add product",
+    href: "/products/add",
+    isActive: (p: string) => p === "/products/add",
+    icon: (
+      <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M12 5v14M5 12h14" />
+      </svg>
+    ),
+  },
+];
+
+// Pages anyone can open without logging in.
+const publicRoutes = ["/login", "/register"];
+
+export default function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname() ?? "";
+
+  if (publicRoutes.includes(pathname)) {
+    return <PublicShell>{children}</PublicShell>;
+  }
+
+  return (
+    <AuthGuard>
+      <PrivateShell pathname={pathname}>{children}</PrivateShell>
+    </AuthGuard>
+  );
+}
+
+function PublicShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen">
+      <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 md:px-8">
+        <Link href="/" className="text-lg font-semibold">
+          Product Manager
+        </Link>
+        <nav className="flex items-center gap-2">
+          <Link href="/login" className="rounded-md px-4 py-1.5 text-sm font-medium hover:bg-slate-100">
+            Login
+          </Link>
+          <Link
+            href="/register"
+            className="rounded-md bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            Register
+          </Link>
+        </nav>
+      </header>
+      <main className="p-4 md:p-8">{children}</main>
+    </div>
+  );
+}
+
+function PrivateShell({ pathname, children }: { pathname: string; children: React.ReactNode }) {
+  const { user, logout } = useAuth();
+  const [open, setOpen] = useState(false);
+
+  const currentTitle = menu.find((m) => m.isActive(pathname))?.label ?? "";
+
+  return (
+    <div className="flex min-h-screen">
+      {/* Mobile overlay */}
+      {open && <div className="fixed inset-0 z-30 bg-black/40 md:hidden" onClick={() => setOpen(false)} />}
+
+      {/* Sidebar */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 w-60 transform border-r border-slate-200 bg-white transition-transform md:static md:translate-x-0 ${
+          open ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="flex h-16 items-center border-b border-slate-200 px-5 text-lg font-semibold">
+          Product Manager
+        </div>
+        <nav className="space-y-1 p-3" aria-label="Main menu">
+          {menu.map((item) => {
+            const active = item.isActive(pathname);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                aria-current={active ? "page" : undefined}
+                className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium ${
+                  active ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                {item.icon}
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+      </aside>
+
+      {/* Right side: navbar + page content */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 md:px-8">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              aria-label="Open menu"
+              onClick={() => setOpen(true)}
+              className="rounded-md p-2 text-slate-600 hover:bg-slate-100 md:hidden"
+            >
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <span className="font-medium text-slate-700">{currentTitle}</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="hidden text-sm text-slate-600 sm:inline">{user?.name}</span>
+            <button
+              type="button"
+              onClick={logout}
+              className="rounded-md border border-slate-300 px-4 py-1.5 text-sm font-medium hover:bg-slate-100"
+            >
+              Logout
+            </button>
+          </div>
+        </header>
+
+        <main className="flex-1 p-4 md:p-8">
+          <div className="mx-auto max-w-5xl">{children}</div>
+        </main>
+      </div>
+    </div>
+  );
+}
