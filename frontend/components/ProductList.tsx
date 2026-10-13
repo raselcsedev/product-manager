@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import Alert from "@/components/Alert";
+import ProductThumb from "@/components/ProductThumb";
 import Spinner from "@/components/Spinner";
 import { deleteProduct, getCategories, getProductsPage } from "@/lib/api";
 import { useDebounce } from "@/lib/useDebounce";
@@ -52,7 +53,7 @@ export default function ProductList() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [result, setResult] = useState<PagedResult<Product> | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(searchParams.get("error"));
   const [success, setSuccess] = useState<string | null>(searchParams.get("success"));
   const [reloadKey, setReloadKey] = useState(0); // bump to force a reload (after delete)
 
@@ -76,7 +77,6 @@ export default function ProductList() {
 
     async function load() {
       setLoading(true);
-      setError(null);
       try {
         const [sortBy, sortDir] = sort.split(":");
         const res = await getProductsPage({
@@ -292,7 +292,12 @@ export default function ProductList() {
                 {products.map((p) => (
                   <tr key={p.id}>
                     <td className="px-4 py-3">{p.id}</td>
-                    <td className="px-4 py-3 font-medium">{p.name}</td>
+                    <td className="px-4 py-3 font-medium">
+                      <div className="flex items-center gap-3">
+                        <ProductThumb fileName={p.imageFileName} name={p.name} />
+                        <span>{p.name}</span>
+                      </div>
+                    </td>
                     <td className="px-4 py-3">
                       {p.category ? (
                         <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">

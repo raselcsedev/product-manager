@@ -33,6 +33,7 @@ public class UserDto
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public string Role { get; set; } = Roles.User;
 }
 
 public class AuthResponse
@@ -40,4 +41,23 @@ public class AuthResponse
     public string Token { get; set; } = string.Empty;
     public DateTime ExpiresAt { get; set; }
     public UserDto User { get; set; } = new();
+}
+
+// ---- Admin ----
+public class AdminUserDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Role { get; set; } = Roles.User;
+    public DateTime CreatedAt { get; set; }
+    public int ProductCount { get; set; }
+    public int CategoryCount { get; set; }
+}
+
+public class UpdateRoleRequest
+{
+    [Required(ErrorMessage = "Role is required.")]
+    [RegularExpression("^(Admin|User)$", ErrorMessage = "Role must be Admin or User.")]
+    public string Role { get; set; } = string.Empty;
 }

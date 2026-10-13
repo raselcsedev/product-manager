@@ -29,11 +29,15 @@ public class AuthController : ControllerBase
         if (await _db.Users.AnyAsync(u => u.Email == email))
             return Conflict(new { message = "An account with this email already exists." });
 
+        // The very first account on a fresh system becomes the Admin; everyone else is a normal User.
+        var isFirstUser = !await _db.Users.AnyAsync();
+
         var user = new AppUser
         {
             Name = request.Name.Trim(),
             Email = email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            Role = isFirstUser ? Roles.Admin : Roles.User,
             CreatedAt = DateTime.UtcNow,
         };
 
@@ -44,7 +48,6 @@ public class AuthController : ControllerBase
         }
         catch (DbUpdateException)
         {
-            // Two people registering the same email at the same moment: the unique index stops the second one.
             if (await _db.Users.AnyAsync(u => u.Email == email))
                 return Conflict(new { message = "An account with this email already exists." });
             throw;
@@ -67,30 +70,26 @@ public class AuthController : ControllerBase
         return Ok(BuildResponse(user));
     }
 
-    // GET /api/auth/me  (requires a valid token)
+    // GET /api/auth/me  (requires a valid token; returns the CURRENT data from the database)
     [Authorize]
     [HttpGet("me")]
     public async Task<ActionResult<UserDto>> Me()
     {
-        var idClaim = User.FindFirst("sub")?.Value;
-        if (!int.TryParse(idClaim, out var id))
-            return Unauthorized(new { message = "Invalid token." });
+        var id = User.GetUserId();
 
         var user = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
         if (user is null)
             return Unauthorized(new { message = "User no longer exists." });
 
-        return Ok(new UserDto { Id = user.Id, Name = user.Name, Email = user.Email });
+        return Ok(ToDto(user));
     }
+
+    private static UserDto ToDto(AppUser user) =>
+        new() { Id = user.Id, Name = user.Name, Email = user.Email, Role = user.Role };
 
     private AuthResponse BuildResponse(AppUser user)
     {
         var (token, expiresAt) = _tokens.CreateToken(user);
-        return new AuthResponse
-        {
-            Token = token,
-            ExpiresAt = expiresAt,
-            User = new UserDto { Id = user.Id, Name = user.Name, Email = user.Email },
-        };
+        return new AuthResponse { Token = token, ExpiresAt = expiresAt, User = ToDto(user) };
     }
 }

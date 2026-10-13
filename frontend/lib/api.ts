@@ -1,9 +1,12 @@
 import { PagedResult, Product, ProductInput, ProductQueryParams, ProductSummary } from "@/types/product";
 import { Category, CategoryInput } from "@/types/category";
-import { AuthResponse, LoginInput, RegisterInput } from "@/types/auth";
+import { AdminUser, AuthResponse, AuthUser, LoginInput, RegisterInput, Role } from "@/types/auth";
 import { clearAuth, loadAuth } from "@/lib/authStorage";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5080";
+
+// Full URL of an uploaded product image
+export const imageUrl = (fileName: string) => `${API_URL}/uploads/products/${fileName}`;
 
 // Turns an ASP.NET error response into a readable message.
 async function readError(res: Response): Promise<string> {
@@ -24,7 +27,10 @@ async function readError(res: Response): Promise<string> {
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const auth = loadAuth();
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
+
+  // For file uploads (FormData) the browser must set Content-Type itself, including the multipart boundary.
+  const isForm = typeof FormData !== "undefined" && options?.body instanceof FormData;
+  const headers: Record<string, string> = isForm ? {} : { "Content-Type": "application/json" };
   if (auth) headers.Authorization = `Bearer ${auth.token}`;
 
   let res: Response;
@@ -34,11 +40,22 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     throw new Error("Cannot reach the API. Make sure the backend is running.");
   }
 
-  // A 401 on a normal endpoint means the token is missing, invalid or expired.
-  if (res.status === 401 && !path.startsWith("/api/auth/")) {
+  // 401 = token missing, invalid, expired, or the user no longer exists.
+  // (A wrong password on the login/register forms is also a 401, but that is not a session problem.)
+  const isCredentialCall = path === "/api/auth/login" || path === "/api/auth/register";
+  if (res.status === 401 && !isCredentialCall) {
     clearAuth();
     if (typeof window !== "undefined") window.dispatchEvent(new Event("auth:expired"));
     throw new Error("Your session has expired. Please log in again.");
+  }
+
+  // 403 = logged in, but not allowed to do this (for example, not an admin).
+  if (res.status === 403) {
+    throw new Error("You do not have permission to do this.");
+  }
+
+  if (res.status === 413) {
+    throw new Error("The file is too large.");
   }
 
   if (!res.ok) throw new Error(await readError(res));
@@ -52,6 +69,18 @@ export const loginUser = (input: LoginInput) =>
 
 export const registerUser = (input: RegisterInput) =>
   request<AuthResponse>("/api/auth/register", { method: "POST", body: JSON.stringify(input) });
+
+// Current user data straight from the database (so role changes show up without logging in again)
+export const getMe = () => request<AuthUser>("/api/auth/me");
+
+// ---- Admin: user management (Admin role only) ----
+export const getAdminUsers = () => request<AdminUser[]>("/api/admin/users");
+
+export const updateUserRole = (id: number, role: Role) =>
+  request<void>(`/api/admin/users/${id}/role`, { method: "PUT", body: JSON.stringify({ role }) });
+
+export const deleteAdminUser = (id: number) =>
+  request<void>(`/api/admin/users/${id}`, { method: "DELETE" });
 
 // ---- Categories ----
 export const getCategories = () => request<Category[]>("/api/categories");
@@ -102,3 +131,13 @@ export const updateProduct = (id: number, input: ProductInput) =>
 
 export const deleteProduct = (id: number) =>
   request<void>(`/api/products/${id}`, { method: "DELETE" });
+
+// ---- Product images ----
+export function uploadProductImage(id: number, file: File) {
+  const form = new FormData();
+  form.append("file", file); // the field name must be "file" (matches the C# parameter name)
+  return request<{ imageFileName: string }>(`/api/products/${id}/image`, { method: "POST", body: form });
+}
+
+export const deleteProductImage = (id: number) =>
+  request<void>(`/api/products/${id}/image`, { method: "DELETE" });

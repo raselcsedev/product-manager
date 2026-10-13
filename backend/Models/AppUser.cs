@@ -16,5 +16,9 @@ public class AppUser
     [Required, StringLength(255)]
     public string PasswordHash { get; set; } = string.Empty;
 
+    // "Admin" or "User"
+    [Required, StringLength(20)]
+    public string Role { get; set; } = Roles.User;
+
     public DateTime CreatedAt { get; set; }
 }

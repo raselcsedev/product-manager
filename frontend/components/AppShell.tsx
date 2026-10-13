@@ -12,6 +12,7 @@ const menu = [
   {
     label: "Dashboard",
     href: "/",
+    adminOnly: false,
     isActive: (p: string) => p === "/",
     icon: (
       <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -22,6 +23,7 @@ const menu = [
   {
     label: "Products",
     href: "/products",
+    adminOnly: false,
     isActive: (p: string) => p === "/products" || p.startsWith("/products/edit"),
     icon: (
       <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -32,6 +34,7 @@ const menu = [
   {
     label: "Add product",
     href: "/products/add",
+    adminOnly: false,
     isActive: (p: string) => p === "/products/add",
     icon: (
       <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -42,10 +45,22 @@ const menu = [
   {
     label: "Categories",
     href: "/categories",
+    adminOnly: false,
     isActive: (p: string) => p === "/categories",
     icon: (
       <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
         <path d="M20.6 13.4l-7.2 7.2a2 2 0 01-2.8 0L3 13V3h10l7.6 7.6a2 2 0 010 2.8zM7.5 7.5h.01" />
+      </svg>
+    ),
+  },
+  {
+    label: "Users",
+    href: "/admin/users",
+    adminOnly: true, // only shown to admins
+    isActive: (p: string) => p === "/admin/users",
+    icon: (
+      <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
       </svg>
     ),
   },
@@ -93,9 +108,11 @@ function PublicShell({ children }: { children: React.ReactNode }) {
 }
 
 function PrivateShell({ pathname, children }: { pathname: string; children: React.ReactNode }) {
-  const { user, logout } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
   const [open, setOpen] = useState(false);
 
+  // Hiding a menu item is only for convenience. The real protection is on the server.
+  const visibleMenu = menu.filter((item) => !item.adminOnly || isAdmin);
   const currentTitle = menu.find((m) => m.isActive(pathname))?.label ?? "";
 
   return (
@@ -113,7 +130,7 @@ function PrivateShell({ pathname, children }: { pathname: string; children: Reac
           Product Manager
         </div>
         <nav className="space-y-1 p-3" aria-label="Main menu">
-          {menu.map((item) => {
+          {visibleMenu.map((item) => {
             const active = item.isActive(pathname);
             return (
               <Link
@@ -152,6 +169,9 @@ function PrivateShell({ pathname, children }: { pathname: string; children: Reac
 
           <div className="flex items-center gap-3">
             <span className="hidden text-sm text-slate-600 sm:inline">{user?.name}</span>
+            {isAdmin && (
+              <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800">Admin</span>
+            )}
             <button
               type="button"
               onClick={logout}

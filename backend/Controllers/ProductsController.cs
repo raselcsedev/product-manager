@@ -13,10 +13,12 @@ namespace ProductApi.Controllers;
 public class ProductsController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly ImageStorage _images;
 
-    public ProductsController(AppDbContext db)
+    public ProductsController(AppDbContext db, ImageStorage images)
     {
         _db = db;
+        _images = images;
     }
 
     // The ONLY way this controller reads products: always limited to the logged-in user.
@@ -133,9 +135,10 @@ public class ProductsController : ControllerBase
         if (!await CategoryBelongsToUser(product.CategoryId, ownerId))
             return BadRequest(new { message = "The selected category does not exist." });
 
-        product.Id = 0;              // the database generates the id
-        product.OwnerId = ownerId;   // taken from the token, never from the client
-        product.Category = null;     // clients set CategoryId only, never a whole category object
+        product.Id = 0;               // the database generates the id
+        product.OwnerId = ownerId;    // taken from the token, never from the client
+        product.Category = null;      // clients set CategoryId only, never a whole category object
+        product.ImageFileName = null; // images are added only through the /image endpoint
         _db.Products.Add(product);
         await _db.SaveChangesAsync();
 
@@ -166,7 +169,7 @@ public class ProductsController : ControllerBase
         existing.Price = input.Price;
         existing.Quantity = input.Quantity;
         existing.CategoryId = input.CategoryId;
-        // OwnerId is never changed here.
+        // OwnerId and ImageFileName are never changed here.
 
         await _db.SaveChangesAsync();
         return NoContent();
@@ -180,8 +183,59 @@ public class ProductsController : ControllerBase
         if (existing is null)
             return NotFound(new { message = $"Product with id {id} was not found." });
 
+        var imageFile = existing.ImageFileName;
+
         _db.Products.Remove(existing);
         await _db.SaveChangesAsync();
+
+        _images.Delete(imageFile); // remove the file only after the database row is gone
+        return NoContent();
+    }
+
+    // POST /api/products/5/image   (multipart/form-data with a field named "file")
+    [HttpPost("{id:int}/image")]
+    [RequestSizeLimit(3 * 1024 * 1024)]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadImage(int id, [FromForm] IFormFile file)
+    {
+        var product = await OwnProducts().FirstOrDefaultAsync(p => p.Id == id);
+        if (product is null)
+            return NotFound(new { message = $"Product with id {id} was not found." });
+
+        var (fileName, error) = await _images.SaveAsync(file);
+        if (fileName is null)
+            return BadRequest(new { message = error });
+
+        var oldFile = product.ImageFileName;
+        product.ImageFileName = fileName;
+
+        try
+        {
+            await _db.SaveChangesAsync();
+        }
+        catch
+        {
+            _images.Delete(fileName); // don't leave an orphan file behind
+            throw;
+        }
+
+        _images.Delete(oldFile); // the replaced image is no longer needed
+        return Ok(new { imageFileName = fileName });
+    }
+
+    // DELETE /api/products/5/image
+    [HttpDelete("{id:int}/image")]
+    public async Task<IActionResult> DeleteImage(int id)
+    {
+        var product = await OwnProducts().FirstOrDefaultAsync(p => p.Id == id);
+        if (product is null)
+            return NotFound(new { message = $"Product with id {id} was not found." });
+
+        var oldFile = product.ImageFileName;
+        product.ImageFileName = null;
+        await _db.SaveChangesAsync();
+
+        _images.Delete(oldFile);
         return NoContent();
     }
 

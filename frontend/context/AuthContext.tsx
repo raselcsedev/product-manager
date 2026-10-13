@@ -1,12 +1,13 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { loginUser, registerUser } from "@/lib/api";
+import { getMe, loginUser, registerUser } from "@/lib/api";
 import { clearAuth, loadAuth, saveAuth } from "@/lib/authStorage";
 import { AuthResponse, AuthUser } from "@/types/auth";
 
 interface AuthContextValue {
   user: AuthUser | null;
+  isAdmin: boolean;
   ready: boolean; // false until we have checked localStorage
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
@@ -20,10 +21,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setUser(loadAuth()?.user ?? null);
+    const stored = loadAuth();
+    setUser(stored?.user ?? null);
     setReady(true);
 
-    // api.ts fires this event when the server answers 401.
+    // Ask the server for the latest user data (role, name). If the user was deleted or the
+    // token is no longer valid, api.ts clears the session and fires "auth:expired".
+    if (stored) {
+      getMe()
+        .then((me) => {
+          const current = loadAuth();
+          if (!current) return;
+          saveAuth({ ...current, user: me });
+          setUser(me);
+        })
+        .catch(() => {
+          // 401 is handled inside api.ts. Network errors are ignored: we keep the saved user.
+        });
+    }
+
     const onExpired = () => setUser(null);
     window.addEventListener("auth:expired", onExpired);
     return () => window.removeEventListener("auth:expired", onExpired);
@@ -48,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, ready, login, register, logout }}>
+    <AuthContext.Provider value={{ user, isAdmin: user?.role === "Admin", ready, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

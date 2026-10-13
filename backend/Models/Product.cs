@@ -28,8 +28,13 @@ public class Product
     // Navigation property: EF fills this with the Category row when we use .Include(...)
     public Category? Category { get; set; }
 
-    // The user who owns this product. [JsonIgnore] means it is never sent to the client
-    // and can never be set by the client: the server fills it from the login token.
+    // Only the generated file name is stored (like "3f2a...c9.jpg"), never the image itself.
+    // It is sent to the client for display, but ignored when the client sends a product:
+    // it can only be changed through the /image endpoints.
+    [StringLength(100)]
+    public string? ImageFileName { get; set; }
+
+    // The user who owns this product. Never sent to or accepted from the client.
     [JsonIgnore]
     public int OwnerId { get; set; }
 }

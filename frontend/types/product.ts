@@ -6,15 +6,22 @@ export interface Product {
   quantity: number;
   categoryId: number | null;
   category: { id: number; name: string } | null;
+  imageFileName: string | null;
 }
 
-// What the form collects (no id)
+// What the form collects (no id, no image: images are uploaded separately)
 export interface ProductInput {
   name: string;
   description: string | null;
   price: number;
   quantity: number;
   categoryId: number | null;
+}
+
+// What the user did with the image in the form
+export interface ImageChange {
+  file: File | null; // a newly chosen image to upload
+  remove: boolean;   // true = delete the current image
 }
 
 export interface PagedResult<T> {

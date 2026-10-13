@@ -3,17 +3,21 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Alert from "@/components/Alert";
-import { getCategories } from "@/lib/api";
+import ProductThumb from "@/components/ProductThumb";
+import { getCategories, imageUrl } from "@/lib/api";
 import { Category } from "@/types/category";
-import { Product, ProductInput } from "@/types/product";
+import { ImageChange, Product, ProductInput } from "@/types/product";
 
 interface ProductFormProps {
   initialValues?: Product;
   submitLabel: string;
-  onSubmit: (values: ProductInput) => Promise<void>;
+  onSubmit: (values: ProductInput, image: ImageChange) => Promise<void>;
 }
 
 type FormErrors = Partial<Record<"name" | "price" | "quantity", string>>;
+
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2 MB (the server checks this too)
 
 export default function ProductForm({ initialValues, submitLabel, onSubmit }: ProductFormProps) {
   // Form fields are kept as strings so inputs behave naturally while typing.
@@ -24,6 +28,13 @@ export default function ProductForm({ initialValues, submitLabel, onSubmit }: Pr
   const [categoryId, setCategoryId] = useState(
     initialValues?.categoryId != null ? String(initialValues.categoryId) : ""
   );
+
+  // Image state
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [removeImage, setRemoveImage] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [inputKey, setInputKey] = useState(0); // changing the key resets the file input
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesError, setCategoriesError] = useState(false);
@@ -46,6 +57,54 @@ export default function ProductForm({ initialValues, submitLabel, onSubmit }: Pr
       cancelled = true;
     };
   }, []);
+
+  // Local preview of a newly chosen file (before it is uploaded)
+  useEffect(() => {
+    if (!imageFile) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(imageFile);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [imageFile]);
+
+  const existingFileName = initialValues?.imageFileName ?? null;
+  const showingExisting = !!existingFileName && !removeImage && !imageFile;
+  const hasAnyImage = !!imageFile || showingExisting;
+
+  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null;
+    setImageError(null);
+    if (!file) {
+      setImageFile(null);
+      return;
+    }
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setImageError("Only JPG, PNG or WebP images are allowed.");
+      event.target.value = "";
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setImageError("Image must be 2 MB or smaller.");
+      event.target.value = "";
+      return;
+    }
+    setImageFile(file);
+    setRemoveImage(false);
+  }
+
+  function handleRemoveImage() {
+    setImageError(null);
+    if (imageFile) {
+      // Just forget the newly chosen file
+      setImageFile(null);
+      setInputKey((k) => k + 1);
+    } else {
+      // Remove the image that is already saved
+      setRemoveImage(true);
+    }
+  }
 
   function validate(): FormErrors {
     const e: FormErrors = {};
@@ -74,13 +133,16 @@ export default function ProductForm({ initialValues, submitLabel, onSubmit }: Pr
 
     setSubmitting(true);
     try {
-      await onSubmit({
-        name: name.trim(),
-        description: description.trim() === "" ? null : description.trim(),
-        price: Number(price),
-        quantity: Number(quantity),
-        categoryId: categoryId === "" ? null : Number(categoryId),
-      });
+      await onSubmit(
+        {
+          name: name.trim(),
+          description: description.trim() === "" ? null : description.trim(),
+          price: Number(price),
+          quantity: Number(quantity),
+          categoryId: categoryId === "" ? null : Number(categoryId),
+        },
+        { file: imageFile, remove: removeImage && !imageFile }
+      );
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Something went wrong.");
       setSubmitting(false);
@@ -162,6 +224,47 @@ export default function ProductForm({ initialValues, submitLabel, onSubmit }: Pr
             onChange={(e) => setQuantity(e.target.value)}
           />
           {errors.quantity && <p className="mt-1 text-sm text-red-600">{errors.quantity}</p>}
+        </div>
+      </div>
+
+      {/* Image */}
+      <div>
+        <label htmlFor="image" className="text-sm font-medium">Image</label>
+        <div className="mt-2 flex items-start gap-4">
+          {previewUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={previewUrl} alt="Selected image preview" className="h-32 w-32 rounded-md border border-slate-200 object-cover" />
+          ) : showingExisting && existingFileName ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={imageUrl(existingFileName)} alt={name || "Product image"} className="h-32 w-32 rounded-md border border-slate-200 object-cover" />
+          ) : (
+            <ProductThumb fileName={null} name={name} size="lg" />
+          )}
+
+          <div className="space-y-2">
+            <input
+              key={inputKey}
+              id="image"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleFileChange}
+              className="block text-sm text-slate-600 file:mr-3 file:rounded-md file:border file:border-slate-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-slate-100"
+            />
+            <p className="text-xs text-slate-500">JPG, PNG or WebP, up to 2 MB.</p>
+            {hasAnyImage && (
+              <button
+                type="button"
+                onClick={handleRemoveImage}
+                className="text-sm text-red-700 hover:underline"
+              >
+                Remove image
+              </button>
+            )}
+            {removeImage && !imageFile && (
+              <p className="text-xs text-amber-700">The current image will be removed when you save.</p>
+            )}
+            {imageError && <p className="text-sm text-red-600">{imageError}</p>}
+          </div>
         </div>
       </div>
 

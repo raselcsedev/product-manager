@@ -5,8 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import Alert from "@/components/Alert";
 import ProductForm from "@/components/ProductForm";
 import Spinner from "@/components/Spinner";
-import { getProduct, updateProduct } from "@/lib/api";
-import { Product, ProductInput } from "@/types/product";
+import { deleteProductImage, getProduct, updateProduct, uploadProductImage } from "@/lib/api";
+import { ImageChange, Product, ProductInput } from "@/types/product";
 
 export default function EditProductPage() {
   const router = useRouter();
@@ -30,8 +30,20 @@ export default function EditProductPage() {
     load();
   }, [id]);
 
-  async function handleUpdate(values: ProductInput) {
+  async function handleUpdate(values: ProductInput, image: ImageChange) {
+    // Step 1: save the product fields (JSON)
     await updateProduct(id, values);
+
+    // Step 2: apply the image change, if any
+    try {
+      if (image.file) await uploadProductImage(id, image.file); // new or replacement image
+      else if (image.remove) await deleteProductImage(id);      // removed image
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : "unknown error";
+      router.push(`/products?error=${encodeURIComponent(`Product updated, but the image change failed: ${reason}`)}`);
+      return;
+    }
+
     router.push(`/products?success=${encodeURIComponent("Product updated successfully.")}`);
   }
 
