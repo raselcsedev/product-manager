@@ -18,17 +18,16 @@ public class ProductsController : ControllerBase
         _db = db;
     }
 
-    // GET /api/products?search=&minPrice=&maxPrice=&stock=&sortBy=&sortDir=&page=&pageSize=
+    // GET /api/products?search=&categoryId=&minPrice=&maxPrice=&stock=&sortBy=&sortDir=&page=&pageSize=
     [HttpGet]
     public async Task<ActionResult<PagedResult<Product>>> GetAll([FromQuery] ProductQuery q)
     {
         if (q.MinPrice.HasValue && q.MaxPrice.HasValue && q.MinPrice > q.MaxPrice)
             return BadRequest(new { message = "Minimum price cannot be greater than maximum price." });
 
-        // 1. Start with "all products" (nothing has hit the database yet)
-        IQueryable<Product> query = _db.Products.AsNoTracking();
+        // Include(...) tells EF to JOIN the Categories table so each product carries its category.
+        IQueryable<Product> query = _db.Products.AsNoTracking().Include(p => p.Category);
 
-        // 2. Add filters one by one. Each Where() just adds to the SQL that will be built.
         if (!string.IsNullOrWhiteSpace(q.Search))
         {
             var term = q.Search.Trim();
@@ -36,6 +35,7 @@ public class ProductsController : ControllerBase
                                      (p.Description != null && p.Description.Contains(term)));
         }
 
+        if (q.CategoryId.HasValue) query = query.Where(p => p.CategoryId == q.CategoryId.Value);
         if (q.MinPrice.HasValue) query = query.Where(p => p.Price >= q.MinPrice.Value);
         if (q.MaxPrice.HasValue) query = query.Where(p => p.Price <= q.MaxPrice.Value);
 
@@ -47,7 +47,6 @@ public class ProductsController : ControllerBase
             _     => query,
         };
 
-        // 3. Sorting. ThenBy(Id) keeps the order stable so a row never jumps between pages.
         var desc = q.SortDir == "desc";
         query = (q.SortBy, desc) switch
         {
@@ -61,7 +60,6 @@ public class ProductsController : ControllerBase
             _                   => query.OrderBy(p => p.Id),
         };
 
-        // 4. Count ALL matches first (for "Page 2 of 5"), then fetch only one page of rows.
         var totalCount = await query.CountAsync();
         var items = await query
             .Skip((q.Page - 1) * q.PageSize)
@@ -107,7 +105,11 @@ public class ProductsController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<Product>> GetById(int id)
     {
-        var product = await _db.Products.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
+        var product = await _db.Products
+            .AsNoTracking()
+            .Include(p => p.Category)
+            .FirstOrDefaultAsync(p => p.Id == id);
+
         if (product is null)
             return NotFound(new { message = $"Product with id {id} was not found." });
 
@@ -118,9 +120,17 @@ public class ProductsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Product>> Create(Product product)
     {
-        product.Id = 0; // the database generates the id
+        if (!await CategoryExists(product.CategoryId))
+            return BadRequest(new { message = "The selected category does not exist." });
+
+        product.Id = 0;          // the database generates the id
+        product.Category = null; // clients set CategoryId only, never a whole category object
         _db.Products.Add(product);
         await _db.SaveChangesAsync();
+
+        // Load the category so the response includes its name
+        if (product.CategoryId.HasValue)
+            await _db.Entry(product).Reference(p => p.Category).LoadAsync();
 
         return CreatedAtAction(nameof(GetById), new { id = product.Id }, product);
     }
@@ -132,6 +142,9 @@ public class ProductsController : ControllerBase
         if (id != input.Id)
             return BadRequest(new { message = "The id in the URL does not match the id in the request body." });
 
+        if (!await CategoryExists(input.CategoryId))
+            return BadRequest(new { message = "The selected category does not exist." });
+
         var existing = await _db.Products.FindAsync(id);
         if (existing is null)
             return NotFound(new { message = $"Product with id {id} was not found." });
@@ -140,6 +153,7 @@ public class ProductsController : ControllerBase
         existing.Description = input.Description;
         existing.Price = input.Price;
         existing.Quantity = input.Quantity;
+        existing.CategoryId = input.CategoryId;
 
         await _db.SaveChangesAsync();
         return NoContent();
@@ -156,5 +170,12 @@ public class ProductsController : ControllerBase
         _db.Products.Remove(existing);
         await _db.SaveChangesAsync();
         return NoContent();
+    }
+
+    // null means "no category", which is allowed.
+    private async Task<bool> CategoryExists(int? categoryId)
+    {
+        if (!categoryId.HasValue) return true;
+        return await _db.Categories.AnyAsync(c => c.Id == categoryId.Value);
     }
 }

@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Alert from "@/components/Alert";
+import { getCategories } from "@/lib/api";
+import { Category } from "@/types/category";
 import { Product, ProductInput } from "@/types/product";
 
 interface ProductFormProps {
@@ -19,10 +21,31 @@ export default function ProductForm({ initialValues, submitLabel, onSubmit }: Pr
   const [description, setDescription] = useState(initialValues?.description ?? "");
   const [price, setPrice] = useState(initialValues ? String(initialValues.price) : "");
   const [quantity, setQuantity] = useState(initialValues ? String(initialValues.quantity) : "");
+  const [categoryId, setCategoryId] = useState(
+    initialValues?.categoryId != null ? String(initialValues.categoryId) : ""
+  );
+
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesError, setCategoriesError] = useState(false);
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Load the categories for the dropdown
+  useEffect(() => {
+    let cancelled = false;
+    getCategories()
+      .then((list) => {
+        if (!cancelled) setCategories(list);
+      })
+      .catch(() => {
+        if (!cancelled) setCategoriesError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function validate(): FormErrors {
     const e: FormErrors = {};
@@ -56,6 +79,7 @@ export default function ProductForm({ initialValues, submitLabel, onSubmit }: Pr
         description: description.trim() === "" ? null : description.trim(),
         price: Number(price),
         quantity: Number(quantity),
+        categoryId: categoryId === "" ? null : Number(categoryId),
       });
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Something went wrong.");
@@ -86,6 +110,31 @@ export default function ProductForm({ initialValues, submitLabel, onSubmit }: Pr
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
+      </div>
+
+      <div>
+        <label htmlFor="category" className="text-sm font-medium">Category</label>
+        <select
+          id="category"
+          className={inputClass}
+          value={categoryId}
+          onChange={(e) => setCategoryId(e.target.value)}
+        >
+          <option value="">No category</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
+        {categoriesError ? (
+          <p className="mt-1 text-sm text-amber-700">Could not load categories. You can still save without one.</p>
+        ) : (
+          categories.length === 0 && (
+            <p className="mt-1 text-sm text-slate-500">
+              No categories yet.{" "}
+              <Link href="/categories" className="text-blue-600 hover:underline">Create one</Link>
+            </p>
+          )
+        )}
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2">

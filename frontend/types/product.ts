@@ -4,6 +4,8 @@ export interface Product {
   description: string | null;
   price: number;
   quantity: number;
+  categoryId: number | null;
+  category: { id: number; name: string } | null;
 }
 
 // What the form collects (no id)
@@ -12,6 +14,7 @@ export interface ProductInput {
   description: string | null;
   price: number;
   quantity: number;
+  categoryId: number | null;
 }
 
 export interface PagedResult<T> {
@@ -35,6 +38,7 @@ export type StockFilter = "all" | "in" | "low" | "out";
 
 export interface ProductQueryParams {
   search?: string;
+  categoryId?: number;
   minPrice?: number;
   maxPrice?: number;
   stock?: StockFilter;

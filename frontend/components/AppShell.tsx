@@ -39,6 +39,16 @@ const menu = [
       </svg>
     ),
   },
+  {
+    label: "Categories",
+    href: "/categories",
+    isActive: (p: string) => p === "/categories",
+    icon: (
+      <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M20.6 13.4l-7.2 7.2a2 2 0 01-2.8 0L3 13V3h10l7.6 7.6a2 2 0 010 2.8zM7.5 7.5h.01" />
+      </svg>
+    ),
+  },
 ];
 
 // Pages anyone can open without logging in.

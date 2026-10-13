@@ -20,4 +20,10 @@ public class Product
 
     [Range(0, int.MaxValue, ErrorMessage = "Quantity cannot be negative.")]
     public int Quantity { get; set; }
+
+    // Foreign key: the id of the category (null = no category)
+    public int? CategoryId { get; set; }
+
+    // Navigation property: EF fills this with the Category row when we use .Include(...)
+    public Category? Category { get; set; }
 }

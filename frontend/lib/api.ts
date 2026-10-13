@@ -1,4 +1,5 @@
 import { PagedResult, Product, ProductInput, ProductQueryParams, ProductSummary } from "@/types/product";
+import { Category, CategoryInput } from "@/types/category";
 import { AuthResponse, LoginInput, RegisterInput } from "@/types/auth";
 import { clearAuth, loadAuth } from "@/lib/authStorage";
 
@@ -52,12 +53,25 @@ export const loginUser = (input: LoginInput) =>
 export const registerUser = (input: RegisterInput) =>
   request<AuthResponse>("/api/auth/register", { method: "POST", body: JSON.stringify(input) });
 
+// ---- Categories ----
+export const getCategories = () => request<Category[]>("/api/categories");
+
+export const createCategory = (input: CategoryInput) =>
+  request<Category>("/api/categories", { method: "POST", body: JSON.stringify(input) });
+
+export const updateCategory = (id: number, input: CategoryInput) =>
+  request<void>(`/api/categories/${id}`, { method: "PUT", body: JSON.stringify(input) });
+
+export const deleteCategory = (id: number) =>
+  request<void>(`/api/categories/${id}`, { method: "DELETE" });
+
 // ---- Products (all require login) ----
 
 // Builds /api/products?search=...&page=2 from an object, skipping empty values.
-export function getProductsPage(params: ProductQueryParams) {
+export async function getProductsPage(params: ProductQueryParams) {
   const qs = new URLSearchParams();
   if (params.search?.trim()) qs.set("search", params.search.trim());
+  if (params.categoryId !== undefined) qs.set("categoryId", String(params.categoryId));
   if (params.minPrice !== undefined) qs.set("minPrice", String(params.minPrice));
   if (params.maxPrice !== undefined) qs.set("maxPrice", String(params.maxPrice));
   if (params.stock && params.stock !== "all") qs.set("stock", params.stock);
@@ -66,7 +80,11 @@ export function getProductsPage(params: ProductQueryParams) {
   if (params.page) qs.set("page", String(params.page));
   if (params.pageSize) qs.set("pageSize", String(params.pageSize));
 
-  return request<PagedResult<Product>>(`/api/products?${qs.toString()}`);
+  const data = await request<PagedResult<Product>>(`/api/products?${qs.toString()}`);
+  if (!data || !Array.isArray(data.items)) {
+    throw new Error("Unexpected response from the API. Restart the backend so it runs the latest code.");
+  }
+  return data;
 }
 
 export const getProductSummary = () => request<ProductSummary>("/api/products/summary");

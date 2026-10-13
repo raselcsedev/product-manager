@@ -9,10 +9,12 @@ public static class StockLevels
 }
 
 // Everything the frontend can send in the query string:
-// GET /api/products?search=mouse&stock=low&sortBy=price&sortDir=desc&page=2&pageSize=10
+// GET /api/products?search=mouse&categoryId=2&stock=low&sortBy=price&sortDir=desc&page=2&pageSize=10
 public class ProductQuery
 {
     public string? Search { get; set; }
+
+    public int? CategoryId { get; set; }
 
     [Range(0, 999999999, ErrorMessage = "Minimum price cannot be negative.")]
     public decimal? MinPrice { get; set; }
