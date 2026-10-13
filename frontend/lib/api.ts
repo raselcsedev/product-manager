@@ -1,4 +1,4 @@
-import { Product, ProductInput } from "@/types/product";
+import { PagedResult, Product, ProductInput, ProductQueryParams, ProductSummary } from "@/types/product";
 import { AuthResponse, LoginInput, RegisterInput } from "@/types/auth";
 import { clearAuth, loadAuth } from "@/lib/authStorage";
 
@@ -53,7 +53,23 @@ export const registerUser = (input: RegisterInput) =>
   request<AuthResponse>("/api/auth/register", { method: "POST", body: JSON.stringify(input) });
 
 // ---- Products (all require login) ----
-export const getProducts = () => request<Product[]>("/api/products");
+
+// Builds /api/products?search=...&page=2 from an object, skipping empty values.
+export function getProductsPage(params: ProductQueryParams) {
+  const qs = new URLSearchParams();
+  if (params.search?.trim()) qs.set("search", params.search.trim());
+  if (params.minPrice !== undefined) qs.set("minPrice", String(params.minPrice));
+  if (params.maxPrice !== undefined) qs.set("maxPrice", String(params.maxPrice));
+  if (params.stock && params.stock !== "all") qs.set("stock", params.stock);
+  if (params.sortBy) qs.set("sortBy", params.sortBy);
+  if (params.sortDir) qs.set("sortDir", params.sortDir);
+  if (params.page) qs.set("page", String(params.page));
+  if (params.pageSize) qs.set("pageSize", String(params.pageSize));
+
+  return request<PagedResult<Product>>(`/api/products?${qs.toString()}`);
+}
+
+export const getProductSummary = () => request<ProductSummary>("/api/products/summary");
 
 export const getProduct = (id: number) => request<Product>(`/api/products/${id}`);
 

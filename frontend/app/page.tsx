@@ -4,10 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Alert from "@/components/Alert";
 import Spinner from "@/components/Spinner";
-import { getProducts } from "@/lib/api";
-import { Product } from "@/types/product";
-
-const LOW_STOCK_LIMIT = 10;
+import { getProductSummary } from "@/lib/api";
+import { ProductSummary } from "@/types/product";
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
@@ -19,14 +17,14 @@ function StatCard({ label, value }: { label: string; value: string }) {
 }
 
 export default function DashboardPage() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [summary, setSummary] = useState<ProductSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
       try {
-        setProducts(await getProducts());
+        setSummary(await getProductSummary());
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load dashboard data.");
       } finally {
@@ -35,13 +33,6 @@ export default function DashboardPage() {
     }
     load();
   }, []);
-
-  const totalProducts = products.length;
-  const totalUnits = products.reduce((sum, p) => sum + p.quantity, 0);
-  const inventoryValue = products.reduce((sum, p) => sum + p.price * p.quantity, 0);
-  const lowStock = products
-    .filter((p) => p.quantity < LOW_STOCK_LIMIT)
-    .sort((a, b) => a.quantity - b.quantity);
 
   return (
     <div className="space-y-6">
@@ -58,16 +49,19 @@ export default function DashboardPage() {
       {error && <Alert type="error" message={error} />}
       {loading && <Spinner label="Loading dashboard..." />}
 
-      {!loading && !error && (
+      {summary && (
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Total products" value={String(totalProducts)} />
-            <StatCard label="Units in stock" value={totalUnits.toLocaleString()} />
+            <StatCard label="Total products" value={String(summary.totalProducts)} />
+            <StatCard label="Units in stock" value={summary.totalUnits.toLocaleString()} />
             <StatCard
               label="Inventory value"
-              value={inventoryValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              value={summary.inventoryValue.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             />
-            <StatCard label={`Low stock (under ${LOW_STOCK_LIMIT})`} value={String(lowStock.length)} />
+            <StatCard label={`Low stock (under ${summary.lowStockLimit})`} value={String(summary.lowStockCount)} />
           </div>
 
           <section className="rounded-lg border border-slate-200 bg-white">
@@ -78,17 +72,17 @@ export default function DashboardPage() {
               </Link>
             </div>
 
-            {totalProducts === 0 ? (
+            {summary.totalProducts === 0 ? (
               <p className="px-5 py-8 text-center text-sm text-slate-600">
                 No products yet. Add your first product to see stats here.
               </p>
-            ) : lowStock.length === 0 ? (
+            ) : summary.lowStock.length === 0 ? (
               <p className="px-5 py-8 text-center text-sm text-slate-600">
-                Every product has at least {LOW_STOCK_LIMIT} units in stock.
+                Every product has at least {summary.lowStockLimit} units in stock.
               </p>
             ) : (
               <ul className="divide-y divide-slate-100">
-                {lowStock.slice(0, 5).map((p) => (
+                {summary.lowStock.map((p) => (
                   <li key={p.id} className="flex items-center justify-between px-5 py-3 text-sm">
                     <div>
                       <p className="font-medium">{p.name}</p>

@@ -1,35 +1,94 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import Alert from "@/components/Alert";
 import Spinner from "@/components/Spinner";
-import { deleteProduct, getProducts } from "@/lib/api";
-import { Product } from "@/types/product";
+import { deleteProduct, getProductsPage } from "@/lib/api";
+import { useDebounce } from "@/lib/useDebounce";
+import { PagedResult, Product, StockFilter } from "@/types/product";
+
+const sortOptions = [
+  { value: "id:asc", label: "Oldest first" },
+  { value: "id:desc", label: "Newest first" },
+  { value: "name:asc", label: "Name A to Z" },
+  { value: "name:desc", label: "Name Z to A" },
+  { value: "price:asc", label: "Price: low to high" },
+  { value: "price:desc", label: "Price: high to low" },
+  { value: "quantity:asc", label: "Quantity: low to high" },
+  { value: "quantity:desc", label: "Quantity: high to low" },
+];
+
+const stockOptions: { value: StockFilter; label: string }[] = [
+  { value: "all", label: "All stock levels" },
+  { value: "in", label: "In stock" },
+  { value: "low", label: "Low stock" },
+  { value: "out", label: "Out of stock" },
+];
+
+const pageSizes = [5, 10, 20, 50];
 
 export default function ProductList() {
   const searchParams = useSearchParams();
-  const [products, setProducts] = useState<Product[]>([]);
+
+  // Filter / sort / page state
+  const [search, setSearch] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [stock, setStock] = useState<StockFilter>("all");
+  const [sort, setSort] = useState("id:asc");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // Text inputs update instantly, but the API is called after the user pauses typing.
+  const dSearch = useDebounce(search);
+  const dMin = useDebounce(minPrice);
+  const dMax = useDebounce(maxPrice);
+
+  // Data state
+  const [result, setResult] = useState<PagedResult<Product> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(searchParams.get("success"));
-
-  const loadProducts = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setProducts(await getProducts());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load products.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const [reloadKey, setReloadKey] = useState(0); // bump to force a reload (after delete)
 
   useEffect(() => {
-    loadProducts();
-  }, [loadProducts]);
+    let cancelled = false; // ignore answers from outdated requests
+
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const [sortBy, sortDir] = sort.split(":");
+        const res = await getProductsPage({
+          search: dSearch,
+          minPrice: dMin === "" ? undefined : Number(dMin),
+          maxPrice: dMax === "" ? undefined : Number(dMax),
+          stock,
+          sortBy,
+          sortDir,
+          page,
+          pageSize,
+        });
+        if (cancelled) return;
+        setResult(res);
+        // Deleted the last row on the last page? Step back one page.
+        if (res.items.length === 0 && res.page > 1) {
+          setPage(Math.max(1, res.totalPages));
+        }
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load products.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [dSearch, dMin, dMax, stock, sort, page, pageSize, reloadKey]);
 
   async function handleDelete(product: Product) {
     if (!window.confirm(`Delete "${product.name}"? This cannot be undone.`)) return;
@@ -39,11 +98,29 @@ export default function ProductList() {
     try {
       await deleteProduct(product.id);
       setSuccess(`"${product.name}" was deleted.`);
-      await loadProducts(); // refresh the list
+      setReloadKey((k) => k + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete product.");
     }
   }
+
+  function clearFilters() {
+    setSearch("");
+    setMinPrice("");
+    setMaxPrice("");
+    setStock("all");
+    setSort("id:asc");
+    setPage(1);
+  }
+
+  const hasFilters = search !== "" || minPrice !== "" || maxPrice !== "" || stock !== "all";
+  const products = result?.items ?? [];
+  const totalPages = result?.totalPages ?? 0;
+  const from = result && result.totalCount > 0 ? (result.page - 1) * result.pageSize + 1 : 0;
+  const to = result ? Math.min(result.page * result.pageSize, result.totalCount) : 0;
+
+  const inputClass =
+    "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600";
 
   return (
     <div className="space-y-4">
@@ -57,15 +134,109 @@ export default function ProductList() {
       {success && <Alert type="success" message={success} />}
       {error && <Alert type="error" message={error} />}
 
-      {loading ? (
+      {/* Filters */}
+      <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-6">
+        <div className="sm:col-span-2">
+          <label htmlFor="search" className="text-xs font-medium text-slate-600">Search</label>
+          <input
+            id="search"
+            type="search"
+            placeholder="Name or description"
+            className={inputClass}
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="stock" className="text-xs font-medium text-slate-600">Stock</label>
+          <select
+            id="stock"
+            className={inputClass}
+            value={stock}
+            onChange={(e) => {
+              setStock(e.target.value as StockFilter);
+              setPage(1);
+            }}
+          >
+            {stockOptions.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="minPrice" className="text-xs font-medium text-slate-600">Min price</label>
+          <input
+            id="minPrice"
+            type="number"
+            min="0"
+            step="0.01"
+            className={inputClass}
+            value={minPrice}
+            onChange={(e) => {
+              setMinPrice(e.target.value);
+              setPage(1);
+            }}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="maxPrice" className="text-xs font-medium text-slate-600">Max price</label>
+          <input
+            id="maxPrice"
+            type="number"
+            min="0"
+            step="0.01"
+            className={inputClass}
+            value={maxPrice}
+            onChange={(e) => {
+              setMaxPrice(e.target.value);
+              setPage(1);
+            }}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="sort" className="text-xs font-medium text-slate-600">Sort by</label>
+          <select
+            id="sort"
+            className={inputClass}
+            value={sort}
+            onChange={(e) => {
+              setSort(e.target.value);
+              setPage(1);
+            }}
+          >
+            {sortOptions.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Results */}
+      {loading && !result ? (
         <Spinner label="Loading products..." />
-      ) : products.length === 0 && !error ? (
+      ) : result && result.totalCount === 0 && !error ? (
         <div className="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center text-slate-600">
-          No products yet. Add your first product to get started.
+          {hasFilters ? (
+            <>
+              <p>No products match your filters.</p>
+              <button onClick={clearFilters} className="mt-3 text-sm text-blue-600 hover:underline">
+                Clear filters
+              </button>
+            </>
+          ) : (
+            "No products yet. Add your first product to get started."
+          )}
         </div>
       ) : (
         products.length > 0 && (
-          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+          <div className={`overflow-x-auto rounded-lg border border-slate-200 bg-white ${loading ? "opacity-60" : ""}`}>
             <table className="w-full text-left text-sm">
               <thead className="border-b border-slate-200 bg-slate-100 text-slate-700">
                 <tr>
@@ -107,6 +278,50 @@ export default function ProductList() {
             </table>
           </div>
         )
+      )}
+
+      {/* Pagination */}
+      {result && result.totalCount > 0 && (
+        <div className="flex flex-col items-center justify-between gap-3 text-sm text-slate-600 sm:flex-row">
+          <p>
+            Showing {from}-{to} of {result.totalCount}
+          </p>
+
+          <div className="flex items-center gap-3">
+            <label htmlFor="pageSize" className="sr-only">Rows per page</label>
+            <select
+              id="pageSize"
+              className="rounded-md border border-slate-300 bg-white px-2 py-1"
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(1);
+              }}
+            >
+              {pageSizes.map((n) => (
+                <option key={n} value={n}>{n} per page</option>
+              ))}
+            </select>
+
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="rounded-md border border-slate-300 px-3 py-1 hover:bg-slate-100 disabled:opacity-40"
+            >
+              Previous
+            </button>
+            <span>
+              Page {result.page} of {totalPages}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className="rounded-md border border-slate-300 px-3 py-1 hover:bg-slate-100 disabled:opacity-40"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
