@@ -22,7 +22,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy("Frontend", policy =>
         policy.WithOrigins(allowedOrigin)
               .AllowAnyHeader()
-              .AllowAnyMethod());
+              .AllowAnyMethod()
+              // Browsers hide most response headers from JavaScript unless the server exposes them.
+              .WithExposedHeaders("Content-Disposition", "X-Export-Truncated"));
 });
 
 // 3. Authentication (JWT)

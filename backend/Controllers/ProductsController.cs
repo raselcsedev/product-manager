@@ -12,6 +12,9 @@ namespace ProductApi.Controllers;
 [Route("api/[controller]")]   // -> /api/products
 public class ProductsController : ControllerBase
 {
+    // An export never returns more than this many rows.
+    private const int MaxExportRows = 10_000;
+
     private readonly AppDbContext _db;
     private readonly ImageStorage _images;
 
@@ -28,15 +31,13 @@ public class ProductsController : ControllerBase
         return _db.Products.Where(p => p.OwnerId == ownerId);
     }
 
-    // GET /api/products?search=&categoryId=&minPrice=&maxPrice=&stock=&sortBy=&sortDir=&page=&pageSize=
-    [HttpGet]
-    public async Task<ActionResult<PagedResult<Product>>> GetAll([FromQuery] ProductQuery q)
+    // ---- Shared by the list and the CSV export, so both always agree on what "filtered" means ----
+
+    private static bool PriceRangeInvalid(ProductQuery q) =>
+        q.MinPrice.HasValue && q.MaxPrice.HasValue && q.MinPrice > q.MaxPrice;
+
+    private static IQueryable<Product> ApplyFilters(IQueryable<Product> query, ProductQuery q)
     {
-        if (q.MinPrice.HasValue && q.MaxPrice.HasValue && q.MinPrice > q.MaxPrice)
-            return BadRequest(new { message = "Minimum price cannot be greater than maximum price." });
-
-        IQueryable<Product> query = OwnProducts().AsNoTracking().Include(p => p.Category);
-
         if (!string.IsNullOrWhiteSpace(q.Search))
         {
             var term = q.Search.Trim();
@@ -48,26 +49,41 @@ public class ProductsController : ControllerBase
         if (q.MinPrice.HasValue) query = query.Where(p => p.Price >= q.MinPrice.Value);
         if (q.MaxPrice.HasValue) query = query.Where(p => p.Price <= q.MaxPrice.Value);
 
-        query = q.Stock switch
+        return q.Stock switch
         {
-            "in"  => query.Where(p => p.Quantity > 0),
+            "in" => query.Where(p => p.Quantity > 0),
             "low" => query.Where(p => p.Quantity > 0 && p.Quantity < StockLevels.LowStockLimit),
             "out" => query.Where(p => p.Quantity == 0),
-            _     => query,
+            _ => query,
         };
+    }
 
+    // ThenBy(Id) keeps the order stable, so a row never jumps between pages.
+    private static IQueryable<Product> ApplySort(IQueryable<Product> query, ProductQuery q)
+    {
         var desc = q.SortDir == "desc";
-        query = (q.SortBy, desc) switch
+        return (q.SortBy, desc) switch
         {
-            ("name", false)     => query.OrderBy(p => p.Name).ThenBy(p => p.Id),
-            ("name", true)      => query.OrderByDescending(p => p.Name).ThenBy(p => p.Id),
-            ("price", false)    => query.OrderBy(p => p.Price).ThenBy(p => p.Id),
-            ("price", true)     => query.OrderByDescending(p => p.Price).ThenBy(p => p.Id),
+            ("name", false) => query.OrderBy(p => p.Name).ThenBy(p => p.Id),
+            ("name", true) => query.OrderByDescending(p => p.Name).ThenBy(p => p.Id),
+            ("price", false) => query.OrderBy(p => p.Price).ThenBy(p => p.Id),
+            ("price", true) => query.OrderByDescending(p => p.Price).ThenBy(p => p.Id),
             ("quantity", false) => query.OrderBy(p => p.Quantity).ThenBy(p => p.Id),
-            ("quantity", true)  => query.OrderByDescending(p => p.Quantity).ThenBy(p => p.Id),
-            (_, true)           => query.OrderByDescending(p => p.Id),
-            _                   => query.OrderBy(p => p.Id),
+            ("quantity", true) => query.OrderByDescending(p => p.Quantity).ThenBy(p => p.Id),
+            (_, true) => query.OrderByDescending(p => p.Id),
+            _ => query.OrderBy(p => p.Id),
         };
+    }
+
+    // GET /api/products?search=&categoryId=&minPrice=&maxPrice=&stock=&sortBy=&sortDir=&page=&pageSize=
+    [HttpGet]
+    public async Task<ActionResult<PagedResult<Product>>> GetAll([FromQuery] ProductQuery q)
+    {
+        if (PriceRangeInvalid(q))
+            return BadRequest(new { message = "Minimum price cannot be greater than maximum price." });
+
+        IQueryable<Product> query = OwnProducts().AsNoTracking().Include(p => p.Category);
+        query = ApplySort(ApplyFilters(query, q), q);
 
         var totalCount = await query.CountAsync();
         var items = await query
@@ -82,6 +98,30 @@ public class ProductsController : ControllerBase
             PageSize = q.PageSize,
             TotalCount = totalCount,
         });
+    }
+
+    // GET /api/products/export?search=&categoryId=&...   -> downloads a .csv file
+    // Same filters and sorting as the list, but ALL matching rows (up to MaxExportRows), not one page.
+    [HttpGet("export")]
+    public async Task<IActionResult> Export([FromQuery] ProductQuery q)
+    {
+        if (PriceRangeInvalid(q))
+            return BadRequest(new { message = "Minimum price cannot be greater than maximum price." });
+
+        IQueryable<Product> query = OwnProducts().AsNoTracking().Include(p => p.Category);
+        query = ApplySort(ApplyFilters(query, q), q);
+
+        // Ask for one extra row, so we know whether we had to cut the export short.
+        var rows = await query.Take(MaxExportRows + 1).ToListAsync();
+        var truncated = rows.Count > MaxExportRows;
+        if (truncated) rows.RemoveAt(rows.Count - 1);
+
+        var bytes = CsvFormatter.ToUtf8WithBom(CsvFormatter.BuildProductsCsv(rows));
+
+        if (truncated) Response.Headers["X-Export-Truncated"] = "true";
+
+        // File(...) adds "Content-Disposition: attachment; filename=..." so browsers treat it as a download.
+        return File(bytes, "text/csv; charset=utf-8", $"products-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv");
     }
 
     // GET /api/products/summary  (the logged-in user's dashboard numbers)

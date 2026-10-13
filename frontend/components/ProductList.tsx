@@ -6,7 +6,8 @@ import { useSearchParams } from "next/navigation";
 import Alert from "@/components/Alert";
 import ProductThumb from "@/components/ProductThumb";
 import Spinner from "@/components/Spinner";
-import { deleteProduct, getCategories, getProductsPage } from "@/lib/api";
+import { deleteProduct, downloadProductsCsv, getCategories, getProductsPage } from "@/lib/api";
+import { saveBlob } from "@/lib/download";
 import { useDebounce } from "@/lib/useDebounce";
 import { Category } from "@/types/category";
 import { PagedResult, Product, StockFilter } from "@/types/product";
@@ -53,6 +54,7 @@ export default function ProductList() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [result, setResult] = useState<PagedResult<Product> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(searchParams.get("error"));
   const [success, setSuccess] = useState<string | null>(searchParams.get("success"));
   const [reloadKey, setReloadKey] = useState(0); // bump to force a reload (after delete)
@@ -123,6 +125,37 @@ export default function ProductList() {
     }
   }
 
+  async function handleExport() {
+    setExporting(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      // Same filters and sorting as the table, but no page / pageSize: we want every matching row.
+      const [sortBy, sortDir] = sort.split(":");
+      const { blob, truncated } = await downloadProductsCsv({
+        search: dSearch,
+        categoryId: categoryId === "" ? undefined : Number(categoryId),
+        minPrice: dMin === "" ? undefined : Number(dMin),
+        maxPrice: dMax === "" ? undefined : Number(dMax),
+        stock,
+        sortBy,
+        sortDir,
+      });
+
+      saveBlob(blob, `products-${new Date().toLocaleDateString("en-CA")}.csv`);
+
+      if (truncated) {
+        setError("The export was limited to the first 10,000 products. Narrow the filters to export the rest.");
+      } else {
+        setSuccess("CSV downloaded. It contains all products matching your current filters and sort order.");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to export products.");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   function clearFilters() {
     setSearch("");
     setCategoryId("");
@@ -147,9 +180,19 @@ export default function ProductList() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Products</h1>
-        <Link href="/products/add" className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-          Add product
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={exporting || !result || result.totalCount === 0}
+            className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-100 disabled:opacity-50"
+          >
+            {exporting ? "Exporting..." : "Export CSV"}
+          </button>
+          <Link href="/products/add" className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+            Add product
+          </Link>
+        </div>
       </div>
 
       {success && <Alert type="success" message={success} />}

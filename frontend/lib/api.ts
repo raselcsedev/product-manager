@@ -25,7 +25,8 @@ async function readError(res: Response): Promise<string> {
   return `Request failed (${res.status}).`;
 }
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
+// Sends a request with the login token attached and handles the errors every call shares.
+async function send(path: string, options?: RequestInit): Promise<Response> {
   const auth = loadAuth();
 
   // For file uploads (FormData) the browser must set Content-Type itself, including the multipart boundary.
@@ -58,6 +59,12 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     throw new Error("The file is too large.");
   }
 
+  return res;
+}
+
+// Normal JSON request
+async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const res = await send(path, options);
   if (!res.ok) throw new Error(await readError(res));
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
@@ -96,8 +103,8 @@ export const deleteCategory = (id: number) =>
 
 // ---- Products (all require login) ----
 
-// Builds /api/products?search=...&page=2 from an object, skipping empty values.
-export async function getProductsPage(params: ProductQueryParams) {
+// Builds "search=mouse&page=2" from an object, skipping empty values.
+function buildProductQuery(params: ProductQueryParams) {
   const qs = new URLSearchParams();
   if (params.search?.trim()) qs.set("search", params.search.trim());
   if (params.categoryId !== undefined) qs.set("categoryId", String(params.categoryId));
@@ -108,12 +115,26 @@ export async function getProductsPage(params: ProductQueryParams) {
   if (params.sortDir) qs.set("sortDir", params.sortDir);
   if (params.page) qs.set("page", String(params.page));
   if (params.pageSize) qs.set("pageSize", String(params.pageSize));
+  return qs.toString();
+}
 
-  const data = await request<PagedResult<Product>>(`/api/products?${qs.toString()}`);
+export async function getProductsPage(params: ProductQueryParams) {
+  const data = await request<PagedResult<Product>>(`/api/products?${buildProductQuery(params)}`);
   if (!data || !Array.isArray(data.items)) {
     throw new Error("Unexpected response from the API. Restart the backend so it runs the latest code.");
   }
   return data;
+}
+
+// Downloads the products that match the filters as a CSV file (all rows, not just one page).
+// We use fetch (not a plain link) because the request must carry the login token.
+export async function downloadProductsCsv(params: ProductQueryParams) {
+  const res = await send(`/api/products/export?${buildProductQuery(params)}`);
+  if (!res.ok) throw new Error(await readError(res));
+
+  const blob = await res.blob();
+  const truncated = res.headers.get("X-Export-Truncated") === "true";
+  return { blob, truncated };
 }
 
 export const getProductSummary = () => request<ProductSummary>("/api/products/summary");
