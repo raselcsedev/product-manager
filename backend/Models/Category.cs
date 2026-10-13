@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace ProductApi.Models;
 
@@ -10,6 +11,10 @@ public class Category
     [Required(ErrorMessage = "Category name is required.")]
     [StringLength(50, ErrorMessage = "Category name must be 50 characters or fewer.")]
     public string Name { get; set; } = string.Empty;
+
+    // The user who owns this category (set by the server, hidden from JSON)
+    [JsonIgnore]
+    public int OwnerId { get; set; }
 }
 
 // What the client sends when creating or renaming a category

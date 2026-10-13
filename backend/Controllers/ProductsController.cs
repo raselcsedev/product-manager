@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProductApi.Data;
 using ProductApi.Models;
+using ProductApi.Services;
 
 namespace ProductApi.Controllers;
 
@@ -18,6 +19,13 @@ public class ProductsController : ControllerBase
         _db = db;
     }
 
+    // The ONLY way this controller reads products: always limited to the logged-in user.
+    private IQueryable<Product> OwnProducts()
+    {
+        var ownerId = User.GetUserId();
+        return _db.Products.Where(p => p.OwnerId == ownerId);
+    }
+
     // GET /api/products?search=&categoryId=&minPrice=&maxPrice=&stock=&sortBy=&sortDir=&page=&pageSize=
     [HttpGet]
     public async Task<ActionResult<PagedResult<Product>>> GetAll([FromQuery] ProductQuery q)
@@ -25,8 +33,7 @@ public class ProductsController : ControllerBase
         if (q.MinPrice.HasValue && q.MaxPrice.HasValue && q.MinPrice > q.MaxPrice)
             return BadRequest(new { message = "Minimum price cannot be greater than maximum price." });
 
-        // Include(...) tells EF to JOIN the Categories table so each product carries its category.
-        IQueryable<Product> query = _db.Products.AsNoTracking().Include(p => p.Category);
+        IQueryable<Product> query = OwnProducts().AsNoTracking().Include(p => p.Category);
 
         if (!string.IsNullOrWhiteSpace(q.Search))
         {
@@ -75,16 +82,16 @@ public class ProductsController : ControllerBase
         });
     }
 
-    // GET /api/products/summary  (numbers for the dashboard, calculated by the database)
+    // GET /api/products/summary  (the logged-in user's dashboard numbers)
     [HttpGet("summary")]
     public async Task<ActionResult<ProductSummary>> GetSummary()
     {
-        var totalProducts = await _db.Products.CountAsync();
-        var totalUnits = await _db.Products.SumAsync(p => (long?)p.Quantity) ?? 0;
-        var inventoryValue = await _db.Products.SumAsync(p => (decimal?)(p.Price * p.Quantity)) ?? 0m;
+        var totalProducts = await OwnProducts().CountAsync();
+        var totalUnits = await OwnProducts().SumAsync(p => (long?)p.Quantity) ?? 0;
+        var inventoryValue = await OwnProducts().SumAsync(p => (decimal?)(p.Price * p.Quantity)) ?? 0m;
 
-        var lowStockCount = await _db.Products.CountAsync(p => p.Quantity < StockLevels.LowStockLimit);
-        var lowStock = await _db.Products.AsNoTracking()
+        var lowStockCount = await OwnProducts().CountAsync(p => p.Quantity < StockLevels.LowStockLimit);
+        var lowStock = await OwnProducts().AsNoTracking()
             .Where(p => p.Quantity < StockLevels.LowStockLimit)
             .OrderBy(p => p.Quantity).ThenBy(p => p.Id)
             .Take(5)
@@ -105,7 +112,8 @@ public class ProductsController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<Product>> GetById(int id)
     {
-        var product = await _db.Products
+        // Someone else's product gives 404 (not 403), so nobody can tell it exists.
+        var product = await OwnProducts()
             .AsNoTracking()
             .Include(p => p.Category)
             .FirstOrDefaultAsync(p => p.Id == id);
@@ -120,15 +128,17 @@ public class ProductsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Product>> Create(Product product)
     {
-        if (!await CategoryExists(product.CategoryId))
+        var ownerId = User.GetUserId();
+
+        if (!await CategoryBelongsToUser(product.CategoryId, ownerId))
             return BadRequest(new { message = "The selected category does not exist." });
 
-        product.Id = 0;          // the database generates the id
-        product.Category = null; // clients set CategoryId only, never a whole category object
+        product.Id = 0;              // the database generates the id
+        product.OwnerId = ownerId;   // taken from the token, never from the client
+        product.Category = null;     // clients set CategoryId only, never a whole category object
         _db.Products.Add(product);
         await _db.SaveChangesAsync();
 
-        // Load the category so the response includes its name
         if (product.CategoryId.HasValue)
             await _db.Entry(product).Reference(p => p.Category).LoadAsync();
 
@@ -139,13 +149,15 @@ public class ProductsController : ControllerBase
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, Product input)
     {
+        var ownerId = User.GetUserId();
+
         if (id != input.Id)
             return BadRequest(new { message = "The id in the URL does not match the id in the request body." });
 
-        if (!await CategoryExists(input.CategoryId))
+        if (!await CategoryBelongsToUser(input.CategoryId, ownerId))
             return BadRequest(new { message = "The selected category does not exist." });
 
-        var existing = await _db.Products.FindAsync(id);
+        var existing = await OwnProducts().FirstOrDefaultAsync(p => p.Id == id);
         if (existing is null)
             return NotFound(new { message = $"Product with id {id} was not found." });
 
@@ -154,6 +166,7 @@ public class ProductsController : ControllerBase
         existing.Price = input.Price;
         existing.Quantity = input.Quantity;
         existing.CategoryId = input.CategoryId;
+        // OwnerId is never changed here.
 
         await _db.SaveChangesAsync();
         return NoContent();
@@ -163,7 +176,7 @@ public class ProductsController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var existing = await _db.Products.FindAsync(id);
+        var existing = await OwnProducts().FirstOrDefaultAsync(p => p.Id == id);
         if (existing is null)
             return NotFound(new { message = $"Product with id {id} was not found." });
 
@@ -172,10 +185,10 @@ public class ProductsController : ControllerBase
         return NoContent();
     }
 
-    // null means "no category", which is allowed.
-    private async Task<bool> CategoryExists(int? categoryId)
+    // null means "no category" (allowed). Otherwise the category must belong to the same user.
+    private async Task<bool> CategoryBelongsToUser(int? categoryId, int ownerId)
     {
         if (!categoryId.HasValue) return true;
-        return await _db.Categories.AnyAsync(c => c.Id == categoryId.Value);
+        return await _db.Categories.AnyAsync(c => c.Id == categoryId.Value && c.OwnerId == ownerId);
     }
 }

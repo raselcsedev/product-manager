@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace ProductApi.Models;
 
@@ -26,4 +27,9 @@ public class Product
 
     // Navigation property: EF fills this with the Category row when we use .Include(...)
     public Category? Category { get; set; }
+
+    // The user who owns this product. [JsonIgnore] means it is never sent to the client
+    // and can never be set by the client: the server fills it from the login token.
+    [JsonIgnore]
+    public int OwnerId { get; set; }
 }

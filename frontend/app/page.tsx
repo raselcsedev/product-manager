@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Alert from "@/components/Alert";
 import Spinner from "@/components/Spinner";
+import { useAuth } from "@/context/AuthContext";
 import { getProductSummary } from "@/lib/api";
 import { ProductSummary } from "@/types/product";
 
@@ -17,6 +18,7 @@ function StatCard({ label, value }: { label: string; value: string }) {
 }
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const [summary, setSummary] = useState<ProductSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +39,10 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
+        <div>
+          <h1 className="text-2xl font-semibold">Welcome back, {user?.name}</h1>
+          <p className="text-sm text-slate-500">These numbers include only the products you created.</p>
+        </div>
         <Link
           href="/products/add"
           className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
@@ -74,7 +79,7 @@ export default function DashboardPage() {
 
             {summary.totalProducts === 0 ? (
               <p className="px-5 py-8 text-center text-sm text-slate-600">
-                No products yet. Add your first product to see stats here.
+                You have no products yet. Add your first product to see stats here.
               </p>
             ) : summary.lowStock.length === 0 ? (
               <p className="px-5 py-8 text-center text-sm text-slate-600">

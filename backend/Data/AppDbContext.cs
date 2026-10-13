@@ -18,15 +18,28 @@ public class AppDbContext : DbContext
         // Two accounts cannot share the same email.
         modelBuilder.Entity<AppUser>().HasIndex(u => u.Email).IsUnique();
 
-        // Two categories cannot share the same name.
-        modelBuilder.Entity<Category>().HasIndex(c => c.Name).IsUnique();
+        // A user cannot have two categories with the same name (different users can).
+        modelBuilder.Entity<Category>().HasIndex(c => new { c.OwnerId, c.Name }).IsUnique();
 
-        // Product -> Category (many products, one category, category is optional).
-        // Deleting a category keeps its products and sets their CategoryId to NULL.
+        // Product -> Category (optional). Deleting a category keeps its products.
         modelBuilder.Entity<Product>()
             .HasOne(p => p.Category)
             .WithMany()
             .HasForeignKey(p => p.CategoryId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // Ownership: every product and category belongs to one user.
+        // Deleting a user deletes everything they own.
+        modelBuilder.Entity<Product>()
+            .HasOne<AppUser>()
+            .WithMany()
+            .HasForeignKey(p => p.OwnerId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Category>()
+            .HasOne<AppUser>()
+            .WithMany()
+            .HasForeignKey(c => c.OwnerId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
