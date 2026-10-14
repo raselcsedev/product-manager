@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import Alert from "@/components/Alert";
+import ProductCard from "@/components/ProductCard";
 import ProductThumb from "@/components/ProductThumb";
 import Spinner from "@/components/Spinner";
 import { deleteProduct, downloadProductsCsv, getCategories, getProductsPage } from "@/lib/api";
@@ -30,10 +31,15 @@ const stockOptions: { value: StockFilter; label: string }[] = [
   { value: "out", label: "Out of stock" },
 ];
 
-const pageSizes = [5, 10, 20, 50];
+const pageSizes = [6, 12, 24, 48];
+
+type ViewMode = "table" | "grid";
 
 export default function ProductList() {
   const searchParams = useSearchParams();
+
+  // Table or grid (remembered between visits)
+  const [view, setView] = useState<ViewMode>("table");
 
   // Filter / sort / page state
   const [search, setSearch] = useState("");
@@ -43,7 +49,7 @@ export default function ProductList() {
   const [stock, setStock] = useState<StockFilter>("all");
   const [sort, setSort] = useState("id:asc");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(12);
 
   // Text inputs update instantly, but the API is called after the user pauses typing.
   const dSearch = useDebounce(search);
@@ -58,6 +64,25 @@ export default function ProductList() {
   const [error, setError] = useState<string | null>(searchParams.get("error"));
   const [success, setSuccess] = useState<string | null>(searchParams.get("success"));
   const [reloadKey, setReloadKey] = useState(0); // bump to force a reload (after delete)
+
+  // Load the saved view choice (done in an effect, because localStorage does not exist on the server)
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("productsView");
+      if (saved === "table" || saved === "grid") setView(saved);
+    } catch {
+      // storage can be blocked; the default view is fine
+    }
+  }, []);
+
+  function changeView(next: ViewMode) {
+    setView(next);
+    try {
+      localStorage.setItem("productsView", next);
+    } catch {
+      // ignore
+    }
+  }
 
   // Categories for the filter dropdown (loaded once)
   useEffect(() => {
@@ -130,7 +155,7 @@ export default function ProductList() {
     setError(null);
     setSuccess(null);
     try {
-      // Same filters and sorting as the table, but no page / pageSize: we want every matching row.
+      // Same filters and sorting as the list, but no page / pageSize: we want every matching row.
       const [sortBy, sortDir] = sort.split(":");
       const { blob, truncated } = await downloadProductsCsv({
         search: dSearch,
@@ -176,11 +201,43 @@ export default function ProductList() {
   const inputClass =
     "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600";
 
+  const viewButton = (mode: ViewMode, label: string, icon: React.ReactNode, extra = "") => (
+    <button
+      type="button"
+      aria-pressed={view === mode}
+      onClick={() => changeView(mode)}
+      className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium ${extra} ${
+        view === mode ? "bg-blue-600 text-white" : "bg-white hover:bg-slate-100"
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">Products</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div role="group" aria-label="View mode" className="flex overflow-hidden rounded-md border border-slate-300">
+            {viewButton(
+              "table",
+              "Table",
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M3 6h18M3 12h18M3 18h18" />
+              </svg>
+            )}
+            {viewButton(
+              "grid",
+              "Grid",
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z" />
+              </svg>,
+              "border-l border-slate-300"
+            )}
+          </div>
+
           <button
             type="button"
             onClick={handleExport}
@@ -316,6 +373,12 @@ export default function ProductList() {
             "No products yet. Add your first product to get started."
           )}
         </div>
+      ) : products.length > 0 && view === "grid" ? (
+        <div className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${loading ? "opacity-60" : ""}`}>
+          {products.map((p) => (
+            <ProductCard key={p.id} product={p} onDelete={handleDelete} />
+          ))}
+        </div>
       ) : (
         products.length > 0 && (
           <div className={`overflow-x-auto rounded-lg border border-slate-200 bg-white ${loading ? "opacity-60" : ""}`}>
@@ -336,10 +399,10 @@ export default function ProductList() {
                   <tr key={p.id}>
                     <td className="px-4 py-3">{p.id}</td>
                     <td className="px-4 py-3 font-medium">
-                      <div className="flex items-center gap-3">
+                      <Link href={`/products/${p.id}`} className="flex items-center gap-3 hover:underline">
                         <ProductThumb fileName={p.imageFileName} name={p.name} />
                         <span>{p.name}</span>
-                      </div>
+                      </Link>
                     </td>
                     <td className="px-4 py-3">
                       {p.category ? (

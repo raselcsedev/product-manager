@@ -26,7 +26,8 @@ const menu = [
     label: "Products",
     href: "/products",
     adminOnly: false,
-    isActive: (p: string) => p === "/products" || p.startsWith("/products/edit"),
+    // the list, the edit pages, and a single product's page (/products/5) all belong to "Products"
+    isActive: (p: string) => p === "/products" || p.startsWith("/products/edit") || /^\/products\/\d+$/.test(p),
     icon: (
       <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
         <path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8" />
@@ -52,6 +53,17 @@ const menu = [
     icon: (
       <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
         <path d="M20.6 13.4l-7.2 7.2a2 2 0 01-2.8 0L3 13V3h10l7.6 7.6a2 2 0 010 2.8zM7.5 7.5h.01" />
+      </svg>
+    ),
+  },
+  {
+    label: "Activity",
+    href: "/activity",
+    adminOnly: false,
+    isActive: (p: string) => p === "/activity",
+    icon: (
+      <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M12 8v4l3 3M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
   },

@@ -1,3 +1,4 @@
+import { ActivityQueryParams, AuditLog } from "@/types/activity";
 import { PagedResult, Product, ProductInput, ProductQueryParams, ProductSummary } from "@/types/product";
 import { Category, CategoryInput } from "@/types/category";
 import { DashboardCharts } from "@/types/dashboard";
@@ -99,6 +100,18 @@ export const updateUserRole = (id: number, role: Role) =>
 
 export const deleteAdminUser = (id: number) =>
   request<void>(`/api/admin/users/${id}`, { method: "DELETE" });
+
+// ---- Activity history ----
+export function getActivity(params: ActivityQueryParams) {
+  const qs = new URLSearchParams();
+  if (params.scope) qs.set("scope", params.scope);
+  if (params.entityType && params.entityType !== "all") qs.set("entityType", params.entityType);
+  if (params.action && params.action !== "all") qs.set("action", params.action);
+  if (params.page) qs.set("page", String(params.page));
+  if (params.pageSize) qs.set("pageSize", String(params.pageSize));
+
+  return request<PagedResult<AuditLog>>(`/api/activity?${qs.toString()}`);
+}
 
 // ---- Dashboard ----
 export const getDashboardCharts = () => request<DashboardCharts>("/api/dashboard/charts");

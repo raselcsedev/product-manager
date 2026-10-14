@@ -61,7 +61,10 @@
 .dark .text-red-700 { color: rgb(252 165 165); }
 .dark .text-red-800 { color: rgb(254 202 202); }
 
+.dark .bg-amber-50 { background-color: rgb(120 53 15 / 0.35); }
+.dark .border-amber-200 { border-color: rgb(146 64 14); }
 .dark .text-amber-700 { color: rgb(252 211 77); }
+.dark .text-amber-800 { color: rgb(253 230 138); }
 
 .dark .bg-purple-100 { background-color: rgb(88 28 135 / 0.5); }
 .dark .text-purple-800 { color: rgb(233 213 255); }
