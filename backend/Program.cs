@@ -11,6 +11,9 @@ using ProductApi.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Database (MySQL via XAMPP)
+// AppDbContext needs to know who is logged in, so it can write the "who did it" part of the activity history.
+builder.Services.AddHttpContextAccessor();
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));

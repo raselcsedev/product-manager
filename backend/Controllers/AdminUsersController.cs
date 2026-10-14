@@ -46,6 +46,7 @@ public class AdminUsersController : ControllerBase
     }
 
     // PUT /api/admin/users/3/role   body: { "role": "Admin" }
+    // (The change is written to the activity history automatically by AppDbContext.)
     [HttpPut("{id:int}/role")]
     public async Task<IActionResult> UpdateRole(int id, UpdateRoleRequest request)
     {
@@ -66,10 +67,17 @@ public class AdminUsersController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        if (id == User.GetUserId())
+        var actorId = User.GetUserId();
+        if (id == actorId)
             return BadRequest(new { message = "You cannot delete your own account." });
 
-        if (!await _db.Users.AnyAsync(u => u.Id == id))
+        var target = await _db.Users
+            .AsNoTracking()
+            .Where(u => u.Id == id)
+            .Select(u => new { u.Name, u.Email })
+            .FirstOrDefaultAsync();
+
+        if (target is null)
             return NotFound(new { message = $"User with id {id} was not found." });
 
         // Remember the image files first, because the rows are about to disappear.
@@ -78,12 +86,28 @@ public class AdminUsersController : ControllerBase
             .Select(p => p.ImageFileName!)
             .ToListAsync();
 
-        // One transaction: either everything is deleted, or nothing is.
+        // One transaction: either everything is deleted (and logged), or nothing is.
         await using (var transaction = await _db.Database.BeginTransactionAsync())
         {
-            await _db.Products.Where(p => p.OwnerId == id).ExecuteDeleteAsync();
-            await _db.Categories.Where(c => c.OwnerId == id).ExecuteDeleteAsync();
+            var productsDeleted = await _db.Products.Where(p => p.OwnerId == id).ExecuteDeleteAsync();
+            var categoriesDeleted = await _db.Categories.Where(c => c.OwnerId == id).ExecuteDeleteAsync();
             await _db.Users.Where(u => u.Id == id).ExecuteDeleteAsync();
+
+            // ExecuteDelete skips EF's change tracking, so the audit row is written here by hand,
+            // inside the same transaction.
+            _db.AuditLogs.Add(new AuditLog
+            {
+                UserId = actorId,
+                ActorName = User.GetUserName(),
+                Action = "Deleted",
+                EntityType = "User",
+                EntityId = id,
+                EntityName = target.Name,
+                Details = $"Deleted account {target.Email}; also removed {productsDeleted} product(s) and {categoriesDeleted} category(ies)",
+                CreatedAt = DateTime.UtcNow,
+            });
+            await _db.SaveChangesAsync();
+
             await transaction.CommitAsync();
         }
 
