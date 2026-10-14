@@ -1,5 +1,6 @@
 import { PagedResult, Product, ProductInput, ProductQueryParams, ProductSummary } from "@/types/product";
 import { Category, CategoryInput } from "@/types/category";
+import { DashboardCharts } from "@/types/dashboard";
 import { AdminUser, AuthResponse, AuthUser, LoginInput, RegisterInput, Role } from "@/types/auth";
 import { clearAuth, loadAuth } from "@/lib/authStorage";
 
@@ -88,6 +89,9 @@ export const updateUserRole = (id: number, role: Role) =>
 
 export const deleteAdminUser = (id: number) =>
   request<void>(`/api/admin/users/${id}`, { method: "DELETE" });
+
+// ---- Dashboard ----
+export const getDashboardCharts = () => request<DashboardCharts>("/api/dashboard/charts");
 
 // ---- Categories ----
 export const getCategories = () => request<Category[]>("/api/categories");

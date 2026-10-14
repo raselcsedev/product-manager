@@ -3,10 +3,16 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Alert from "@/components/Alert";
+import BarList from "@/components/charts/BarList";
+import DonutChart from "@/components/charts/DonutChart";
 import Spinner from "@/components/Spinner";
 import { useAuth } from "@/context/AuthContext";
-import { getProductSummary } from "@/lib/api";
+import { getDashboardCharts, getProductSummary } from "@/lib/api";
+import { DashboardCharts } from "@/types/dashboard";
 import { ProductSummary } from "@/types/product";
+
+const money = (n: number) =>
+  n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
@@ -20,13 +26,17 @@ function StatCard({ label, value }: { label: string; value: string }) {
 export default function DashboardPage() {
   const { user } = useAuth();
   const [summary, setSummary] = useState<ProductSummary | null>(null);
+  const [charts, setCharts] = useState<DashboardCharts | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
       try {
-        setSummary(await getProductSummary());
+        // Both requests run at the same time, so the page loads faster.
+        const [s, c] = await Promise.all([getProductSummary(), getDashboardCharts()]);
+        setSummary(s);
+        setCharts(c);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load dashboard data.");
       } finally {
@@ -54,21 +64,57 @@ export default function DashboardPage() {
       {error && <Alert type="error" message={error} />}
       {loading && <Spinner label="Loading dashboard..." />}
 
-      {summary && (
+      {summary && charts && (
         <>
+          {/* Numbers */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard label="Total products" value={String(summary.totalProducts)} />
             <StatCard label="Units in stock" value={summary.totalUnits.toLocaleString()} />
-            <StatCard
-              label="Inventory value"
-              value={summary.inventoryValue.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
-            />
+            <StatCard label="Inventory value" value={money(summary.inventoryValue)} />
             <StatCard label={`Low stock (under ${summary.lowStockLimit})`} value={String(summary.lowStockCount)} />
           </div>
 
+          {/* Charts */}
+          <div className="grid gap-4 lg:grid-cols-3">
+            <section className="rounded-lg border border-slate-200 bg-white p-5">
+              <h2 className="mb-4 font-medium">Stock status</h2>
+              {summary.totalProducts === 0 ? (
+                <p className="py-8 text-center text-sm text-slate-600">No products yet, so there is nothing to chart.</p>
+              ) : (
+                <DonutChart
+                  centerValue={String(summary.totalProducts)}
+                  centerLabel="products"
+                  slices={[
+                    { label: "In stock", value: charts.stockStatus.inStock, color: "#10b981" },
+                    {
+                      label: `Low stock (under ${charts.stockStatus.lowStockLimit})`,
+                      value: charts.stockStatus.lowStock,
+                      color: "#f59e0b",
+                    },
+                    { label: "Out of stock", value: charts.stockStatus.outOfStock, color: "#ef4444" },
+                  ]}
+                />
+              )}
+            </section>
+
+            <section className="rounded-lg border border-slate-200 bg-white p-5 lg:col-span-2">
+              <h2 className="mb-4 font-medium">Inventory value by category</h2>
+              {charts.categories.length === 0 ? (
+                <p className="py-8 text-center text-sm text-slate-600">No products yet, so there is nothing to chart.</p>
+              ) : (
+                <BarList
+                  format={money}
+                  items={charts.categories.map((c) => ({
+                    label: c.name,
+                    value: c.value,
+                    detail: `${c.productCount} product${c.productCount === 1 ? "" : "s"}, ${c.units.toLocaleString()} units`,
+                  }))}
+                />
+              )}
+            </section>
+          </div>
+
+          {/* Restock list */}
           <section className="rounded-lg border border-slate-200 bg-white">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
               <h2 className="font-medium">Products that need restocking</h2>
