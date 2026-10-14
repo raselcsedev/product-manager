@@ -11,6 +11,7 @@ interface AuthContextValue {
   ready: boolean; // false until we have checked localStorage
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
+  updateUser: (user: AuthUser) => void; // after the profile changed on the server
   logout: () => void;
 }
 
@@ -58,13 +59,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     startSession(await registerUser({ name, email, password }));
   }, []);
 
+  const updateUser = useCallback((next: AuthUser) => {
+    const current = loadAuth();
+    if (current) saveAuth({ ...current, user: next });
+    setUser(next);
+  }, []);
+
   const logout = useCallback(() => {
     clearAuth();
     setUser(null);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin: user?.role === "Admin", ready, login, register, logout }}>
+    <AuthContext.Provider
+      value={{ user, isAdmin: user?.role === "Admin", ready, login, register, updateUser, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

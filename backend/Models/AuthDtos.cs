@@ -28,12 +28,30 @@ public class LoginRequest
     public string Password { get; set; } = string.Empty;
 }
 
+public class UpdateProfileRequest
+{
+    [Required(ErrorMessage = "Name is required.")]
+    [StringLength(100, ErrorMessage = "Name must be 100 characters or fewer.")]
+    public string Name { get; set; } = string.Empty;
+}
+
+public class ChangePasswordRequest
+{
+    [Required(ErrorMessage = "Current password is required.")]
+    public string CurrentPassword { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "New password is required.")]
+    [StringLength(72, MinimumLength = 8, ErrorMessage = "New password must be between 8 and 72 characters.")]
+    public string NewPassword { get; set; } = string.Empty;
+}
+
 public class UserDto
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Role { get; set; } = Roles.User;
+    public DateTime CreatedAt { get; set; }
 }
 
 public class AuthResponse

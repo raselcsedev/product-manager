@@ -81,6 +81,16 @@ export const registerUser = (input: RegisterInput) =>
 // Current user data straight from the database (so role changes show up without logging in again)
 export const getMe = () => request<AuthUser>("/api/auth/me");
 
+// ---- Profile ----
+export const updateProfile = (name: string) =>
+  request<AuthUser>("/api/auth/profile", { method: "PUT", body: JSON.stringify({ name }) });
+
+export const changePassword = (currentPassword: string, newPassword: string) =>
+  request<void>("/api/auth/password", {
+    method: "PUT",
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+
 // ---- Admin: user management (Admin role only) ----
 export const getAdminUsers = () => request<AdminUser[]>("/api/admin/users");
 

@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import AuthGuard from "@/components/AuthGuard";
+import ThemeToggle from "@/components/ThemeToggle";
+import UserMenu from "@/components/UserMenu";
 import { useAuth } from "@/context/AuthContext";
 
 const iconClass = "h-5 w-5 shrink-0";
@@ -91,6 +93,7 @@ function PublicShell({ children }: { children: React.ReactNode }) {
           Product Manager
         </Link>
         <nav className="flex items-center gap-2">
+          <ThemeToggle />
           <Link href="/login" className="rounded-md px-4 py-1.5 text-sm font-medium hover:bg-slate-100">
             Login
           </Link>
@@ -108,12 +111,13 @@ function PublicShell({ children }: { children: React.ReactNode }) {
 }
 
 function PrivateShell({ pathname, children }: { pathname: string; children: React.ReactNode }) {
-  const { user, isAdmin, logout } = useAuth();
+  const { isAdmin } = useAuth();
   const [open, setOpen] = useState(false);
 
   // Hiding a menu item is only for convenience. The real protection is on the server.
   const visibleMenu = menu.filter((item) => !item.adminOnly || isAdmin);
-  const currentTitle = menu.find((m) => m.isActive(pathname))?.label ?? "";
+  const currentTitle =
+    pathname === "/profile" ? "Profile" : menu.find((m) => m.isActive(pathname))?.label ?? "";
 
   return (
     <div className="flex min-h-screen">
@@ -167,18 +171,12 @@ function PrivateShell({ pathname, children }: { pathname: string; children: Reac
             <span className="font-medium text-slate-700">{currentTitle}</span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="hidden text-sm text-slate-600 sm:inline">{user?.name}</span>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
             {isAdmin && (
               <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800">Admin</span>
             )}
-            <button
-              type="button"
-              onClick={logout}
-              className="rounded-md border border-slate-300 px-4 py-1.5 text-sm font-medium hover:bg-slate-100"
-            >
-              Logout
-            </button>
+            <UserMenu />
           </div>
         </header>
 

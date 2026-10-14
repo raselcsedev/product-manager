@@ -84,8 +84,56 @@ public class AuthController : ControllerBase
         return Ok(ToDto(user));
     }
 
+    // PUT /api/auth/profile   body: { "name": "New Name" }
+    [Authorize]
+    [HttpPut("profile")]
+    public async Task<ActionResult<UserDto>> UpdateProfile(UpdateProfileRequest request)
+    {
+        // The user comes from the token, so you can only ever change your OWN profile.
+        var id = User.GetUserId();
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
+        if (user is null)
+            return Unauthorized(new { message = "User no longer exists." });
+
+        user.Name = request.Name.Trim();
+        await _db.SaveChangesAsync();
+
+        return Ok(ToDto(user));
+    }
+
+    // PUT /api/auth/password   body: { "currentPassword": "...", "newPassword": "..." }
+    [Authorize]
+    [HttpPut("password")]
+    public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
+    {
+        var id = User.GetUserId();
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
+        if (user is null)
+            return Unauthorized(new { message = "User no longer exists." });
+
+        // A wrong current password is 400, NOT 401: the person IS logged in, so the
+        // frontend must not treat this as an expired session and log them out.
+        if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
+            return BadRequest(new { message = "Your current password is incorrect." });
+
+        if (request.CurrentPassword == request.NewPassword)
+            return BadRequest(new { message = "The new password must be different from the current one." });
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        await _db.SaveChangesAsync();
+
+        return NoContent();
+    }
+
     private static UserDto ToDto(AppUser user) =>
-        new() { Id = user.Id, Name = user.Name, Email = user.Email, Role = user.Role };
+        new()
+        {
+            Id = user.Id,
+            Name = user.Name,
+            Email = user.Email,
+            Role = user.Role,
+            CreatedAt = user.CreatedAt,
+        };
 
     private AuthResponse BuildResponse(AppUser user)
     {

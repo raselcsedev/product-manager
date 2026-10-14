@@ -37,8 +37,16 @@ export default function DonutChart({ slices, centerValue, centerLabel }: DonutCh
     <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center lg:flex-col xl:flex-row">
       <div className="relative h-40 w-40 shrink-0">
         <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90" role="img" aria-label={description}>
-          {/* gray track behind the slices */}
-          <circle cx="50" cy="50" r={radius} fill="none" stroke="#e2e8f0" strokeWidth="14" />
+          {/* gray track behind the slices (uses the theme's slate color, so it also works in dark mode) */}
+          <circle
+            cx="50"
+            cy="50"
+            r={radius}
+            fill="none"
+            stroke="currentColor"
+            className="text-slate-200"
+            strokeWidth="14"
+          />
           {arcs.map((a) => (
             <circle
               key={a.label}

@@ -1,3 +1,67 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ---------- Light theme: Tailwind's normal slate colors (as "R G B" numbers) ---------- */
+:root {
+  --slate-50: 248 250 252;
+  --slate-100: 241 245 249;
+  --slate-200: 226 232 240;
+  --slate-300: 203 213 225;
+  --slate-400: 148 163 184;
+  --slate-500: 100 116 139;
+  --slate-600: 71 85 105;
+  --slate-700: 51 65 85;
+  --slate-800: 30 41 59;
+  --slate-900: 15 23 42;
+  --slate-950: 2 6 23;
+  --surface: 255 255 255;
+}
+
+/* ---------- Dark theme: the same scale, flipped ---------- */
+.dark {
+  color-scheme: dark; /* dark scrollbars, dropdowns and date pickers */
+  --slate-50: 15 23 42;
+  --slate-100: 51 65 85;
+  --slate-200: 51 65 85;
+  --slate-300: 71 85 105;
+  --slate-400: 100 116 139;
+  --slate-500: 148 163 184;
+  --slate-600: 203 213 225;
+  --slate-700: 226 232 240;
+  --slate-800: 241 245 249;
+  --slate-900: 248 250 252;
+  --slate-950: 255 255 255;
+  --surface: 30 41 59; /* cards, inputs, menus */
+}
+
+/* white backgrounds become the dark "surface" color (text-white is left alone, so buttons keep white text) */
+.dark .bg-white {
+  background-color: rgb(var(--surface));
+}
+.dark .file\:bg-white::file-selector-button {
+  background-color: rgb(var(--surface));
+}
+
+/* ---------- Colored badges, alerts and links ---------- */
+.dark .bg-blue-50 { background-color: rgb(30 58 138 / 0.35); }
+.dark .border-blue-200 { border-color: rgb(30 64 175); }
+.dark .text-blue-600 { color: rgb(96 165 250); }
+.dark .text-blue-700 { color: rgb(147 197 253); }
+.dark .text-blue-800 { color: rgb(191 219 254); }
+
+.dark .bg-green-50 { background-color: rgb(20 83 45 / 0.45); }
+.dark .border-green-200 { border-color: rgb(22 101 52); }
+.dark .text-green-800 { color: rgb(187 247 208); }
+
+.dark .bg-red-50 { background-color: rgb(127 29 29 / 0.35); }
+.dark .hover\:bg-red-50:hover { background-color: rgb(127 29 29 / 0.35); }
+.dark .border-red-200 { border-color: rgb(153 27 27); }
+.dark .text-red-600 { color: rgb(248 113 113); }
+.dark .text-red-700 { color: rgb(252 165 165); }
+.dark .text-red-800 { color: rgb(254 202 202); }
+
+.dark .text-amber-700 { color: rgb(252 211 77); }
+
+.dark .bg-purple-100 { background-color: rgb(88 28 135 / 0.5); }
+.dark .text-purple-800 { color: rgb(233 213 255); }

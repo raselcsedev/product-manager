@@ -5,6 +5,7 @@ export interface AuthUser {
   name: string;
   email: string;
   role: Role;
+  createdAt?: string; // filled in once the app has asked the server (/api/auth/me)
 }
 
 export interface AuthResponse {
