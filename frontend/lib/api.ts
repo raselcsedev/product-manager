@@ -1,5 +1,6 @@
 import { ActivityQueryParams, AuditLog } from "@/types/activity";
 import { PagedResult, Product, ProductInput, ProductQueryParams, ProductSummary } from "@/types/product";
+import { PublicCategory, PublicProduct, PublicProductQueryParams } from "@/types/shop";
 import { Category, CategoryInput } from "@/types/category";
 import { DashboardCharts } from "@/types/dashboard";
 import { AdminUser, AuthResponse, AuthUser, LoginInput, RegisterInput, Role } from "@/types/auth";
@@ -29,7 +30,9 @@ async function readError(res: Response): Promise<string> {
 
 // Sends a request with the login token attached and handles the errors every call shares.
 async function send(path: string, options?: RequestInit): Promise<Response> {
-  const auth = loadAuth();
+  // The public shop is for everybody, so those calls never carry a login token.
+  const isPublicCall = path.startsWith("/api/public/");
+  const auth = isPublicCall ? null : loadAuth();
 
   // For file uploads (FormData) the browser must set Content-Type itself, including the multipart boundary.
   const isForm = typeof FormData !== "undefined" && options?.body instanceof FormData;
@@ -59,6 +62,11 @@ async function send(path: string, options?: RequestInit): Promise<Response> {
 
   if (res.status === 413) {
     throw new Error("The file is too large.");
+  }
+
+  // 429 = the public shop's request limit was reached
+  if (res.status === 429) {
+    throw new Error("Too many requests. Please wait a moment and try again.");
   }
 
   return res;
@@ -115,6 +123,25 @@ export function getActivity(params: ActivityQueryParams) {
 
 // ---- Dashboard ----
 export const getDashboardCharts = () => request<DashboardCharts>("/api/dashboard/charts");
+
+// ---- Public shop (no login needed) ----
+export function getPublicProducts(params: PublicProductQueryParams) {
+  const qs = new URLSearchParams();
+  if (params.search?.trim()) qs.set("search", params.search.trim());
+  if (params.category) qs.set("category", params.category);
+  if (params.sort && params.sort !== "newest") qs.set("sort", params.sort);
+  if (params.page) qs.set("page", String(params.page));
+  if (params.pageSize) qs.set("pageSize", String(params.pageSize));
+
+  return request<PagedResult<PublicProduct>>(`/api/public/products?${qs.toString()}`);
+}
+
+export const getPublicCategories = () => request<PublicCategory[]>("/api/public/categories");
+
+export const getPublicProduct = (id: number) => request<PublicProduct>(`/api/public/products/${id}`);
+
+export const getRelatedProducts = (id: number, limit = 4) =>
+  request<PublicProduct[]>(`/api/public/products/${id}/related?limit=${limit}`);
 
 // ---- Categories ----
 export const getCategories = () => request<Category[]>("/api/categories");

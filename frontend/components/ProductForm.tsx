@@ -28,6 +28,7 @@ export default function ProductForm({ initialValues, submitLabel, onSubmit }: Pr
   const [categoryId, setCategoryId] = useState(
     initialValues?.categoryId != null ? String(initialValues.categoryId) : ""
   );
+  const [isPublished, setIsPublished] = useState(initialValues?.isPublished ?? false);
 
   // Image state
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -140,6 +141,7 @@ export default function ProductForm({ initialValues, submitLabel, onSubmit }: Pr
           price: Number(price),
           quantity: Number(quantity),
           categoryId: categoryId === "" ? null : Number(categoryId),
+          isPublished,
         },
         { file: imageFile, remove: removeImage && !imageFile }
       );
@@ -266,6 +268,25 @@ export default function ProductForm({ initialValues, submitLabel, onSubmit }: Pr
             {imageError && <p className="text-sm text-red-600">{imageError}</p>}
           </div>
         </div>
+      </div>
+
+      {/* Public shop */}
+      <div className="rounded-md border border-slate-200 p-4">
+        <label className="flex cursor-pointer items-start gap-3 text-sm">
+          <input
+            type="checkbox"
+            checked={isPublished}
+            onChange={(e) => setIsPublished(e.target.checked)}
+            className="mt-1 h-4 w-4"
+          />
+          <span>
+            <span className="font-medium">Show on the public shop</span>
+            <span className="block text-slate-500">
+              Anyone, even without an account, can then see this product&apos;s name, description, price, image and
+              category. Your exact stock quantity stays private (visitors only see In stock, Low stock or Out of stock).
+            </span>
+          </span>
+        </label>
       </div>
 
       <div className="flex items-center gap-3">

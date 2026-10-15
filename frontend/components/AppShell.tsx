@@ -68,6 +68,17 @@ const menu = [
     ),
   },
   {
+    label: "Public shop",
+    href: "/shop",
+    adminOnly: false,
+    isActive: () => false, // the shop has its own layout without this sidebar
+    icon: (
+      <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M3 9l1-5h16l1 5M3 9v11h18V9M3 9h18M9 20v-6h6v6" />
+      </svg>
+    ),
+  },
+  {
     label: "Users",
     href: "/admin/users",
     adminOnly: true, // only shown to admins
@@ -80,13 +91,15 @@ const menu = [
   },
 ];
 
-// Pages anyone can open without logging in.
-const publicRoutes = ["/login", "/register"];
+// Pages anyone can open without logging in: login, register, and the whole public shop.
+function isPublicRoute(pathname: string) {
+  return pathname === "/login" || pathname === "/register" || pathname === "/shop" || pathname.startsWith("/shop/");
+}
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "";
 
-  if (publicRoutes.includes(pathname)) {
+  if (isPublicRoute(pathname)) {
     return <PublicShell>{children}</PublicShell>;
   }
 
@@ -98,23 +111,42 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 }
 
 function PublicShell({ children }: { children: React.ReactNode }) {
+  const { user, ready } = useAuth();
+
   return (
     <div className="min-h-screen">
       <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 md:px-8">
-        <Link href="/" className="text-lg font-semibold">
+        <Link href="/shop" className="text-lg font-semibold">
           Product Manager
         </Link>
         <nav className="flex items-center gap-2">
+          <Link href="/shop" className="rounded-md px-4 py-1.5 text-sm font-medium hover:bg-slate-100">
+            Shop
+          </Link>
           <ThemeToggle />
-          <Link href="/login" className="rounded-md px-4 py-1.5 text-sm font-medium hover:bg-slate-100">
-            Login
-          </Link>
-          <Link
-            href="/register"
-            className="rounded-md bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            Register
-          </Link>
+          {ready && user ? (
+            // Already logged in: a way back into the app
+            <Link
+              href="/"
+              className="rounded-md bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              Dashboard
+            </Link>
+          ) : (
+            ready && (
+              <>
+                <Link href="/login" className="rounded-md px-4 py-1.5 text-sm font-medium hover:bg-slate-100">
+                  Login
+                </Link>
+                <Link
+                  href="/register"
+                  className="rounded-md bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+                >
+                  Register
+                </Link>
+              </>
+            )
+          )}
         </nav>
       </header>
       <main className="p-4 md:p-8">{children}</main>

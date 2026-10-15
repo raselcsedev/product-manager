@@ -7,6 +7,7 @@ export interface Product {
   categoryId: number | null;
   category: { id: number; name: string } | null;
   imageFileName: string | null;
+  isPublished: boolean; // true = visible on the public shop
 }
 
 // What the form collects (no id, no image: images are uploaded separately)
@@ -16,6 +17,7 @@ export interface ProductInput {
   price: number;
   quantity: number;
   categoryId: number | null;
+  isPublished: boolean;
 }
 
 // What the user did with the image in the form

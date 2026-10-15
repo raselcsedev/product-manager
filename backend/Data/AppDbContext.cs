@@ -67,6 +67,9 @@ public class AppDbContext : DbContext
             .HasForeignKey(c => c.OwnerId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // The public shop only reads published products
+        modelBuilder.Entity<Product>().HasIndex(p => new { p.IsPublished, p.Id });
+
         // Fast "newest first" lookups for the activity page
         modelBuilder.Entity<AuditLog>().HasIndex(a => new { a.UserId, a.CreatedAt });
         modelBuilder.Entity<AuditLog>().HasIndex(a => a.CreatedAt);
@@ -135,7 +138,8 @@ public class AppDbContext : DbContext
             {
                 if (entry.State == EntityState.Added)
                     list.Add(new("Created", "Product", product, product.Name,
-                        $"Price {Money(product.Price)}, quantity {product.Quantity}"));
+                        $"Price {Money(product.Price)}, quantity {product.Quantity}" +
+                        (product.IsPublished ? ", published on the public shop" : "")));
                 else if (entry.State == EntityState.Deleted)
                     list.Add(new("Deleted", "Product", product, product.Name,
                         $"Price {Money(product.Price)}, quantity {product.Quantity}"));
@@ -192,6 +196,12 @@ public class AppDbContext : DbContext
                     break;
                 case nameof(Product.ImageFileName):
                     parts.Add(before is null ? "Image added" : after is null ? "Image removed" : "Image replaced");
+                    break;
+                case nameof(Product.IsPublished):
+                    // Making something public is worth a clear line in the history.
+                    parts.Add(Convert.ToBoolean(after, CultureInfo.InvariantCulture)
+                        ? "Published on the public shop"
+                        : "Removed from the public shop");
                     break;
             }
         }

@@ -35,6 +35,10 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         // Environment variables override appsettings.json, and they are read before Program.cs runs.
         Environment.SetEnvironmentVariable("ConnectionStrings__DefaultConnection", _connectionString);
         Environment.SetEnvironmentVariable("Jwt__Key", JwtKey);
+
+        // The public shop limits requests per IP address. All test requests come from the same
+        // "address", so the limit is raised high enough that it never gets in the way of the tests.
+        Environment.SetEnvironmentVariable("RateLimit__PublicPerMinute", "100000");
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

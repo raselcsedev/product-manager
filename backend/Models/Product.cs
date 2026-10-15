@@ -34,6 +34,10 @@ public class Product
     [StringLength(100)]
     public string? ImageFileName { get; set; }
 
+    // true = visitors who are NOT logged in can see this product on the public shop.
+    // New products are private until the owner turns this on.
+    public bool IsPublished { get; set; }
+
     // The user who owns this product. Never sent to or accepted from the client.
     [JsonIgnore]
     public int OwnerId { get; set; }

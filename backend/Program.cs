@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using System.Text;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
@@ -30,7 +32,24 @@ builder.Services.AddCors(options =>
               .WithExposedHeaders("Content-Disposition", "X-Export-Truncated"));
 });
 
-// 3. Authentication (JWT)
+// 3. Rate limiting for the PUBLIC (not logged in) endpoints.
+// Each IP address may make this many requests per minute; more gets "429 Too Many Requests".
+var publicPerMinute = builder.Configuration.GetValue<int?>("RateLimit:PublicPerMinute") ?? 120;
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("public", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = publicPerMinute,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            }));
+});
+
+// 4. Authentication (JWT)
 var jwtKey = builder.Configuration["Jwt:Key"];
 if (string.IsNullOrWhiteSpace(jwtKey) || jwtKey.Length < 32)
     throw new InvalidOperationException("Jwt:Key must be at least 32 characters. Set it in appsettings.json or with dotnet user-secrets.");
@@ -94,7 +113,7 @@ builder.Services
     });
 builder.Services.AddAuthorization();
 
-// 4. Controllers + Swagger (with an Authorize button for the token)
+// 5. Controllers + Swagger (with an Authorize button for the token)
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -143,8 +162,9 @@ app.UseStaticFiles(new StaticFileOptions
     },
 });
 
-// Order matters: CORS -> who are you? -> are you allowed? -> controllers
+// Order matters: CORS -> rate limit -> who are you? -> are you allowed? -> controllers
 app.UseCors("Frontend");
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

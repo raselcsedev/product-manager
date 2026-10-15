@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ProductThumb from "@/components/ProductThumb";
+import PublicPill from "@/components/PublicPill";
 import StockBadge from "@/components/StockBadge";
 import { Product } from "@/types/product";
 
@@ -24,8 +25,13 @@ export default function ProductCard({ product: p, onDelete }: ProductCardProps) 
           <span className="shrink-0 font-semibold">{p.price.toFixed(2)}</span>
         </div>
 
-        {p.category && (
-          <span className="w-fit rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{p.category.name}</span>
+        {(p.category || p.isPublished) && (
+          <div className="flex flex-wrap items-center gap-2">
+            {p.category && (
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{p.category.name}</span>
+            )}
+            {p.isPublished && <PublicPill />}
+          </div>
         )}
 
         {p.description && <p className="line-clamp-2 text-sm text-slate-600">{p.description}</p>}

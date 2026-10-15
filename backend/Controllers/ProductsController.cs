@@ -51,10 +51,10 @@ public class ProductsController : ControllerBase
 
         return q.Stock switch
         {
-            "in" => query.Where(p => p.Quantity >= StockLevels.LowStockLimit),
+            "in"  => query.Where(p => p.Quantity >= StockLevels.LowStockLimit),
             "low" => query.Where(p => p.Quantity > 0 && p.Quantity < StockLevels.LowStockLimit),
             "out" => query.Where(p => p.Quantity == 0),
-            _ => query,
+            _     => query,
         };
     }
 
@@ -64,14 +64,14 @@ public class ProductsController : ControllerBase
         var desc = q.SortDir == "desc";
         return (q.SortBy, desc) switch
         {
-            ("name", false) => query.OrderBy(p => p.Name).ThenBy(p => p.Id),
-            ("name", true) => query.OrderByDescending(p => p.Name).ThenBy(p => p.Id),
-            ("price", false) => query.OrderBy(p => p.Price).ThenBy(p => p.Id),
-            ("price", true) => query.OrderByDescending(p => p.Price).ThenBy(p => p.Id),
+            ("name", false)     => query.OrderBy(p => p.Name).ThenBy(p => p.Id),
+            ("name", true)      => query.OrderByDescending(p => p.Name).ThenBy(p => p.Id),
+            ("price", false)    => query.OrderBy(p => p.Price).ThenBy(p => p.Id),
+            ("price", true)     => query.OrderByDescending(p => p.Price).ThenBy(p => p.Id),
             ("quantity", false) => query.OrderBy(p => p.Quantity).ThenBy(p => p.Id),
-            ("quantity", true) => query.OrderByDescending(p => p.Quantity).ThenBy(p => p.Id),
-            (_, true) => query.OrderByDescending(p => p.Id),
-            _ => query.OrderBy(p => p.Id),
+            ("quantity", true)  => query.OrderByDescending(p => p.Quantity).ThenBy(p => p.Id),
+            (_, true)           => query.OrderByDescending(p => p.Id),
+            _                   => query.OrderBy(p => p.Id),
         };
     }
 
@@ -209,6 +209,7 @@ public class ProductsController : ControllerBase
         existing.Price = input.Price;
         existing.Quantity = input.Quantity;
         existing.CategoryId = input.CategoryId;
+        existing.IsPublished = input.IsPublished; // the OWNER decides what is public
         // OwnerId and ImageFileName are never changed here.
 
         await _db.SaveChangesAsync();
