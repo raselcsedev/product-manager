@@ -51,7 +51,7 @@ public class ProductsController : ControllerBase
 
         return q.Stock switch
         {
-            "in" => query.Where(p => p.Quantity > 0),
+            "in" => query.Where(p => p.Quantity >= StockLevels.LowStockLimit),
             "low" => query.Where(p => p.Quantity > 0 && p.Quantity < StockLevels.LowStockLimit),
             "out" => query.Where(p => p.Quantity == 0),
             _ => query,

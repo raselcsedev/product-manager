@@ -1,0 +1,100 @@
+using System.Data.Common;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using ProductApi.Data;
+
+namespace ProductApi.Tests;
+
+// Starts the real API in memory, connected to a separate TEST database.
+// One instance is shared by all integration tests (see ApiCollection).
+public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
+{
+    public const string JwtKey = "test-only-jwt-key-that-is-at-least-32-characters-long!";
+
+    private readonly string _connectionString;
+
+    public ApiFactory()
+    {
+        // Set TEST_DB_CONNECTION if your MySQL user or password is different from XAMPP's default.
+        _connectionString = Environment.GetEnvironmentVariable("TEST_DB_CONNECTION")
+            ?? "Server=localhost;Port=3306;Database=product_crud_test;User=root;Password=;";
+
+        // SAFETY: these tests delete and recreate their database, so refuse to run against anything
+        // that is not clearly a test database. Your real data in "product_crud" can never be touched.
+        var csb = new DbConnectionStringBuilder { ConnectionString = _connectionString };
+        var database = csb.TryGetValue("Database", out var value) ? value?.ToString() : null;
+        if (string.IsNullOrWhiteSpace(database) || !database.EndsWith("_test", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"Refusing to run: the test database name must end with \"_test\" (found \"{database}\"). " +
+                "The tests delete and recreate this database.");
+        }
+
+        // Environment variables override appsettings.json, and they are read before Program.cs runs.
+        Environment.SetEnvironmentVariable("ConnectionStrings__DefaultConnection", _connectionString);
+        Environment.SetEnvironmentVariable("Jwt__Key", JwtKey);
+    }
+
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        // "Testing" (not "Development"), so user-secrets and Swagger are not involved.
+        builder.UseEnvironment("Testing");
+    }
+
+    // Runs once, before the first test: builds a fresh, empty test database from the EF model.
+    async Task IAsyncLifetime.InitializeAsync()
+    {
+        try
+        {
+            var serverOnly = new DbConnectionStringBuilder { ConnectionString = _connectionString };
+            serverOnly.Remove("Database"); // the database may not exist yet
+            var serverVersion = ServerVersion.AutoDetect(serverOnly.ConnectionString);
+
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseMySql(_connectionString, serverVersion)
+                .Options;
+
+            await using var db = new AppDbContext(options);
+            await db.Database.EnsureDeletedAsync();
+            await db.Database.EnsureCreatedAsync();
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException(
+                "Could not prepare the test database. Is MySQL running (XAMPP Control Panel) " +
+                "and does the connection string allow creating databases? " +
+                "Set TEST_DB_CONNECTION to change it. Original error: " + ex.Message, ex);
+        }
+    }
+
+    Task IAsyncLifetime.DisposeAsync() => Task.CompletedTask;
+
+    // ---- helpers that talk to the database directly ----
+
+    // Sets a user's role without going through the API (so the "first user is Admin" rule never gets in the way).
+    public async Task SetRoleAsync(int userId, string role)
+    {
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await db.Users
+            .Where(u => u.Id == userId)
+            .ExecuteUpdateAsync(s => s.SetProperty(u => u.Role, role));
+    }
+
+    public async Task<T> QueryDbAsync<T>(Func<AppDbContext, Task<T>> query)
+    {
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        return await query(db);
+    }
+}
+
+// All integration tests join this collection. They share one ApiFactory (one test database)
+// and run one after another, so they never interfere with each other.
+[CollectionDefinition(Name)]
+public sealed class ApiCollection : ICollectionFixture<ApiFactory>
+{
+    public const string Name = "Api";
+}
