@@ -3,11 +3,27 @@ bin/
 obj/
 *.user
 .vs/
+TestResults/
+
+# Uploaded product images (created by the app at runtime)
+backend/uploads/
+
 # Next.js
 node_modules/
 .next/
 out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Environment files and secrets
+.env
 .env*.local
-# Secrets
 appsettings.Development.json
 secrets.json
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
