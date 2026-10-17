@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import AppShell from "@/components/AppShell";
 import { AuthProvider } from "@/context/AuthContext";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Product Manager",
-  description: "Simple product CRUD with Next.js, ASP.NET Core and a database",
+  // Lets every page use short addresses like "/shop/5" in its share-preview and canonical tags
+  metadataBase: new URL(SITE_URL),
+  // A page that sets title "Lamp" becomes "Lamp | Product Manager"
+  title: { default: SITE_NAME, template: `%s | ${SITE_NAME}` },
+  description: "Browse products from independent sellers.",
 };
 
 // Runs in the browser BEFORE the page is painted, so there is no white flash in dark mode.

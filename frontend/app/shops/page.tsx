@@ -1,34 +1,16 @@
-"use client";
-
-import { useEffect, useState } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
-import Alert from "@/components/Alert";
 import ShopCard from "@/components/shop/ShopCard";
-import Spinner from "@/components/Spinner";
-import { getPublicShops } from "@/lib/api";
-import { PublicShop } from "@/types/shop";
+import { getShopsServer } from "@/lib/serverApi";
 
-export default function ShopDirectoryPage() {
-  const [shops, setShops] = useState<PublicShop[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export const metadata: Metadata = {
+  title: "Shops",
+  description: "Sellers who have a shop page, and the products they offer.",
+  alternates: { canonical: "/shops" },
+};
 
-  useEffect(() => {
-    let cancelled = false;
-    getPublicShops()
-      .then((list) => {
-        if (!cancelled) setShops(list);
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load shops.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+export default async function ShopDirectoryPage() {
+  const shops = await getShopsServer();
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
@@ -42,16 +24,11 @@ export default function ShopDirectoryPage() {
         </Link>
       </div>
 
-      {error && <Alert type="error" message={error} />}
-      {loading && <Spinner label="Loading shops..." />}
-
-      {!loading && !error && shops.length === 0 && (
+      {shops.length === 0 ? (
         <div className="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center text-slate-600">
           No shops yet. Sellers can open a shop page from <span className="font-medium">My shop</span> after logging in.
         </div>
-      )}
-
-      {shops.length > 0 && (
+      ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {shops.map((s) => (
             <ShopCard key={s.slug} shop={s} />

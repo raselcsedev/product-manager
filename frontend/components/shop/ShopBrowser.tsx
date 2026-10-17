@@ -5,11 +5,10 @@ import Alert from "@/components/Alert";
 import PublicProductCard from "@/components/shop/PublicProductCard";
 import Spinner from "@/components/Spinner";
 import { getPublicCategories, getPublicProducts } from "@/lib/api";
+import { SHOP_PAGE_SIZE } from "@/lib/site";
 import { useDebounce } from "@/lib/useDebounce";
 import { PagedResult } from "@/types/product";
 import { PublicCategory, PublicProduct, PublicSort } from "@/types/shop";
-
-const PAGE_SIZE = 12;
 
 const sortOptions: { value: PublicSort; label: string }[] = [
   { value: "newest", label: "Newest first" },
@@ -21,9 +20,18 @@ const sortOptions: { value: PublicSort; label: string }[] = [
 const inputClass =
   "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600";
 
+interface ShopBrowserProps {
+  shop?: string; // a seller's shop address; leave out for the main shop
+  // The first page of products and the category list, already fetched on the server.
+  // They are part of the page's HTML (so search engines see the products) and
+  // the browser does not have to fetch them again.
+  initialResult?: PagedResult<PublicProduct> | null;
+  initialCategories?: PublicCategory[];
+}
+
 // The search box, filters, product grid and paging.
-// Used by the main shop (all sellers) and by each seller's shop page (pass `shop` = the seller's address).
-export default function ShopBrowser({ shop }: { shop?: string }) {
+// Used by the main shop (all sellers) and by each seller's shop page.
+export default function ShopBrowser({ shop, initialResult, initialCategories }: ShopBrowserProps) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState(""); // "" = all
   const [sort, setSort] = useState<PublicSort>("newest");
@@ -31,13 +39,15 @@ export default function ShopBrowser({ shop }: { shop?: string }) {
 
   const dSearch = useDebounce(search); // wait until the visitor pauses typing
 
-  const [categories, setCategories] = useState<PublicCategory[]>([]);
-  const [result, setResult] = useState<PagedResult<PublicProduct> | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<PublicCategory[]>(initialCategories ?? []);
+  const [result, setResult] = useState<PagedResult<PublicProduct> | null>(initialResult ?? null);
+  const [loading, setLoading] = useState(!initialResult);
   const [error, setError] = useState<string | null>(null);
 
-  // Category list (loaded once)
+  // Category list: only fetched here when the server did not already provide it
   useEffect(() => {
+    if (initialCategories) return;
+
     let cancelled = false;
     getPublicCategories(shop)
       .then((list) => {
@@ -49,10 +59,19 @@ export default function ShopBrowser({ shop }: { shop?: string }) {
     return () => {
       cancelled = true;
     };
-  }, [shop]);
+  }, [shop, initialCategories]);
 
   // Products
   useEffect(() => {
+    // Back to the plain first page? Then the products the server already gave us are exactly what we need.
+    const isFirstPageView = dSearch === "" && category === "" && sort === "newest" && page === 1;
+    if (initialResult && isFirstPageView) {
+      setResult(initialResult);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     let cancelled = false; // ignore answers from outdated requests
 
     async function load() {
@@ -65,7 +84,7 @@ export default function ShopBrowser({ shop }: { shop?: string }) {
           category: category || undefined,
           sort,
           page,
-          pageSize: PAGE_SIZE,
+          pageSize: SHOP_PAGE_SIZE,
         });
         if (!cancelled) setResult(res);
       } catch (err) {
@@ -79,7 +98,7 @@ export default function ShopBrowser({ shop }: { shop?: string }) {
     return () => {
       cancelled = true;
     };
-  }, [shop, dSearch, category, sort, page]);
+  }, [shop, dSearch, category, sort, page, initialResult]);
 
   const items = result?.items ?? [];
   const totalPages = result?.totalPages ?? 0;

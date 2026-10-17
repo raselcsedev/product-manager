@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
@@ -140,6 +141,17 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var app = builder.Build();
+
+// The website (Next.js) now calls this API from its SERVER to build the shop pages, so every
+// visitor's page view would look like it comes from ONE address and share one rate limit.
+// The website therefore passes the visitor's real address in "X-Forwarded-For", and we use it here.
+// We only believe that header when it comes from a trusted proxy. By default that means the
+// same machine (localhost), so a visitor on the internet cannot fake it.
+// When the website runs on a DIFFERENT machine in production, add its address to KnownProxies.
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor,
+});
 
 if (app.Environment.IsDevelopment())
 {
