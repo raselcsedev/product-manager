@@ -43,6 +43,9 @@ public class AppDbContext : DbContext
         // Two accounts cannot share the same email.
         modelBuilder.Entity<AppUser>().HasIndex(u => u.Email).IsUnique();
 
+        // Two shops cannot share the same address (/shops/<slug>). Many users may have NO shop (null).
+        modelBuilder.Entity<AppUser>().HasIndex(u => u.ShopSlug).IsUnique();
+
         // A user cannot have two categories with the same name (different users can).
         modelBuilder.Entity<Category>().HasIndex(c => new { c.OwnerId, c.Name }).IsUnique();
 
@@ -157,7 +160,7 @@ public class AppDbContext : DbContext
             }
             else if (entry.Entity is AppUser user && entry.State == EntityState.Modified)
             {
-                // Role changes by an admin, name changes and password changes.
+                // Role changes by an admin, name changes, password changes and shop page changes.
                 // Registration (Added) is not logged, because nobody is logged in yet.
                 if (DescribeUserChanges(entry) is { } details)
                     list.Add(new("Updated", "User", user, user.Name, details));
@@ -233,6 +236,29 @@ public class AppDbContext : DbContext
         var hash = entry.Property(nameof(AppUser.PasswordHash));
         if (hash.IsModified && !Equals(hash.OriginalValue, hash.CurrentValue))
             parts.Add("Password changed");
+
+        // The shop page makes a seller visible to the public, so changes to it are recorded too.
+        var slug = entry.Property(nameof(AppUser.ShopSlug));
+        if (slug.IsModified && !Equals(slug.OriginalValue, slug.CurrentValue))
+        {
+            parts.Add(slug.OriginalValue is null ? $"Shop page created: /shops/{slug.CurrentValue}"
+                    : slug.CurrentValue is null ? "Shop page removed"
+                    : $"Shop address: {slug.OriginalValue} -> {slug.CurrentValue}");
+        }
+
+        var shopName = entry.Property(nameof(AppUser.ShopName));
+        if (shopName.IsModified && !Equals(shopName.OriginalValue, shopName.CurrentValue)
+            && shopName.OriginalValue is not null && shopName.CurrentValue is not null)
+        {
+            parts.Add($"Shop name: \"{shopName.OriginalValue}\" -> \"{shopName.CurrentValue}\"");
+        }
+
+        var shopDescription = entry.Property(nameof(AppUser.ShopDescription));
+        if (shopDescription.IsModified && !Equals(shopDescription.OriginalValue, shopDescription.CurrentValue)
+            && slug.CurrentValue is not null && slug.OriginalValue is not null)
+        {
+            parts.Add("Shop description changed");
+        }
 
         return parts.Count == 0 ? null : string.Join("; ", parts);
     }

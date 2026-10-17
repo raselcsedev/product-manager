@@ -81,6 +81,16 @@ export default function ShopProductPage() {
                 <p className="mt-2 text-2xl font-semibold">{money(product.price)}</p>
               </div>
 
+              {/* Only shown when the seller has chosen to have a shop page */}
+              {product.shopSlug && product.shopName && (
+                <p className="text-sm text-slate-600">
+                  Sold by{" "}
+                  <Link href={`/shops/${product.shopSlug}`} className="font-medium text-blue-600 hover:underline">
+                    {product.shopName}
+                  </Link>
+                </p>
+              )}
+
               <div className="flex flex-wrap items-center gap-2">
                 {product.category && (
                   <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{product.category}</span>
@@ -96,6 +106,15 @@ export default function ShopProductPage() {
                   <p className="mt-1 text-sm text-slate-400">No description.</p>
                 )}
               </div>
+
+              {product.shopSlug && product.shopName && (
+                <Link
+                  href={`/shops/${product.shopSlug}`}
+                  className="inline-block rounded-md border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-100"
+                >
+                  More from {product.shopName}
+                </Link>
+              )}
             </div>
           </div>
 

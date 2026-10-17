@@ -1,6 +1,13 @@
 import { ActivityQueryParams, AuditLog } from "@/types/activity";
 import { PagedResult, Product, ProductInput, ProductQueryParams, ProductSummary } from "@/types/product";
-import { PublicCategory, PublicProduct, PublicProductQueryParams } from "@/types/shop";
+import {
+  MyShop,
+  MyShopInput,
+  PublicCategory,
+  PublicProduct,
+  PublicProductQueryParams,
+  PublicShop,
+} from "@/types/shop";
 import { Category, CategoryInput } from "@/types/category";
 import { DashboardCharts } from "@/types/dashboard";
 import { AdminUser, AuthResponse, AuthUser, LoginInput, RegisterInput, Role } from "@/types/auth";
@@ -100,6 +107,14 @@ export const changePassword = (currentPassword: string, newPassword: string) =>
     body: JSON.stringify({ currentPassword, newPassword }),
   });
 
+// ---- My shop page (the seller's own settings) ----
+export const getMyShop = () => request<MyShop>("/api/my-shop");
+
+export const saveMyShop = (input: MyShopInput) =>
+  request<MyShop>("/api/my-shop", { method: "PUT", body: JSON.stringify(input) });
+
+export const deleteMyShop = () => request<void>("/api/my-shop", { method: "DELETE" });
+
 // ---- Admin: user management (Admin role only) ----
 export const getAdminUsers = () => request<AdminUser[]>("/api/admin/users");
 
@@ -129,6 +144,7 @@ export function getPublicProducts(params: PublicProductQueryParams) {
   const qs = new URLSearchParams();
   if (params.search?.trim()) qs.set("search", params.search.trim());
   if (params.category) qs.set("category", params.category);
+  if (params.shop) qs.set("shop", params.shop);
   if (params.sort && params.sort !== "newest") qs.set("sort", params.sort);
   if (params.page) qs.set("page", String(params.page));
   if (params.pageSize) qs.set("pageSize", String(params.pageSize));
@@ -136,12 +152,18 @@ export function getPublicProducts(params: PublicProductQueryParams) {
   return request<PagedResult<PublicProduct>>(`/api/public/products?${qs.toString()}`);
 }
 
-export const getPublicCategories = () => request<PublicCategory[]>("/api/public/categories");
+export const getPublicCategories = (shop?: string) =>
+  request<PublicCategory[]>(`/api/public/categories${shop ? `?shop=${encodeURIComponent(shop)}` : ""}`);
 
 export const getPublicProduct = (id: number) => request<PublicProduct>(`/api/public/products/${id}`);
 
 export const getRelatedProducts = (id: number, limit = 4) =>
   request<PublicProduct[]>(`/api/public/products/${id}/related?limit=${limit}`);
+
+export const getPublicShops = () => request<PublicShop[]>("/api/public/shops");
+
+export const getPublicShop = (slug: string) =>
+  request<PublicShop>(`/api/public/shops/${encodeURIComponent(slug)}`);
 
 // ---- Categories ----
 export const getCategories = () => request<Category[]>("/api/categories");

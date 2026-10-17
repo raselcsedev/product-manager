@@ -21,4 +21,17 @@ public class AppUser
     public string Role { get; set; } = Roles.User;
 
     public DateTime CreatedAt { get; set; }
+
+    // ---- Optional public shop page (the user turns it on themselves) ----
+
+    // The name visitors see, for example "Rasel's Gadgets". It is NOT the account name.
+    [StringLength(60)]
+    public string? ShopName { get; set; }
+
+    // The address of the shop page: /shops/<ShopSlug>. Unique. Null = this user has no shop page.
+    [StringLength(40)]
+    public string? ShopSlug { get; set; }
+
+    [StringLength(300)]
+    public string? ShopDescription { get; set; }
 }

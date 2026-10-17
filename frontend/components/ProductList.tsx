@@ -7,11 +7,17 @@ import Alert from "@/components/Alert";
 import ProductCard from "@/components/ProductCard";
 import ProductThumb from "@/components/ProductThumb";
 import Spinner from "@/components/Spinner";
-import { deleteProduct, downloadProductsCsv, getCategories, getProductsPage } from "@/lib/api";
+import {
+  deleteProduct,
+  downloadProductsCsv,
+  getCategories,
+  getProductsPage,
+} from "@/lib/api";
 import { saveBlob } from "@/lib/download";
 import { useDebounce } from "@/lib/useDebounce";
 import { Category } from "@/types/category";
 import { PagedResult, Product, StockFilter } from "@/types/product";
+import PublicPill from "@/components/PublicPill";
 
 const sortOptions = [
   { value: "id:asc", label: "Oldest first" },
@@ -62,7 +68,9 @@ export default function ProductList() {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(searchParams.get("error"));
-  const [success, setSuccess] = useState<string | null>(searchParams.get("success"));
+  const [success, setSuccess] = useState<string | null>(
+    searchParams.get("success"),
+  );
   const [reloadKey, setReloadKey] = useState(0); // bump to force a reload (after delete)
 
   // Load the saved view choice (done in an effect, because localStorage does not exist on the server)
@@ -124,7 +132,10 @@ export default function ProductList() {
           setPage(Math.max(1, res.totalPages));
         }
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load products.");
+        if (!cancelled)
+          setError(
+            err instanceof Error ? err.message : "Failed to load products.",
+          );
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -137,7 +148,8 @@ export default function ProductList() {
   }, [dSearch, categoryId, dMin, dMax, stock, sort, page, pageSize, reloadKey]);
 
   async function handleDelete(product: Product) {
-    if (!window.confirm(`Delete "${product.name}"? This cannot be undone.`)) return;
+    if (!window.confirm(`Delete "${product.name}"? This cannot be undone.`))
+      return;
 
     setError(null);
     setSuccess(null);
@@ -146,7 +158,9 @@ export default function ProductList() {
       setSuccess(`"${product.name}" was deleted.`);
       setReloadKey((k) => k + 1);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete product.");
+      setError(
+        err instanceof Error ? err.message : "Failed to delete product.",
+      );
     }
   }
 
@@ -170,12 +184,18 @@ export default function ProductList() {
       saveBlob(blob, `products-${new Date().toLocaleDateString("en-CA")}.csv`);
 
       if (truncated) {
-        setError("The export was limited to the first 10,000 products. Narrow the filters to export the rest.");
+        setError(
+          "The export was limited to the first 10,000 products. Narrow the filters to export the rest.",
+        );
       } else {
-        setSuccess("CSV downloaded. It contains all products matching your current filters and sort order.");
+        setSuccess(
+          "CSV downloaded. It contains all products matching your current filters and sort order.",
+        );
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to export products.");
+      setError(
+        err instanceof Error ? err.message : "Failed to export products.",
+      );
     } finally {
       setExporting(false);
     }
@@ -192,16 +212,30 @@ export default function ProductList() {
   }
 
   const hasFilters =
-    search !== "" || categoryId !== "" || minPrice !== "" || maxPrice !== "" || stock !== "all";
+    search !== "" ||
+    categoryId !== "" ||
+    minPrice !== "" ||
+    maxPrice !== "" ||
+    stock !== "all";
   const products = result?.items ?? [];
   const totalPages = result?.totalPages ?? 0;
-  const from = result && result.totalCount > 0 ? (result.page - 1) * result.pageSize + 1 : 0;
-  const to = result ? Math.min(result.page * result.pageSize, result.totalCount) : 0;
+  const from =
+    result && result.totalCount > 0
+      ? (result.page - 1) * result.pageSize + 1
+      : 0;
+  const to = result
+    ? Math.min(result.page * result.pageSize, result.totalCount)
+    : 0;
 
   const inputClass =
     "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600";
 
-  const viewButton = (mode: ViewMode, label: string, icon: React.ReactNode, extra = "") => (
+  const viewButton = (
+    mode: ViewMode,
+    label: string,
+    icon: React.ReactNode,
+    extra = "",
+  ) => (
     <button
       type="button"
       aria-pressed={view === mode}
@@ -220,21 +254,39 @@ export default function ProductList() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">Products</h1>
         <div className="flex flex-wrap items-center gap-2">
-          <div role="group" aria-label="View mode" className="flex overflow-hidden rounded-md border border-slate-300">
+          <div
+            role="group"
+            aria-label="View mode"
+            className="flex overflow-hidden rounded-md border border-slate-300"
+          >
             {viewButton(
               "table",
               "Table",
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <svg
+                className="h-4 w-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
                 <path d="M3 6h18M3 12h18M3 18h18" />
-              </svg>
+              </svg>,
             )}
             {viewButton(
               "grid",
               "Grid",
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <svg
+                className="h-4 w-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
                 <path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z" />
               </svg>,
-              "border-l border-slate-300"
+              "border-l border-slate-300",
             )}
           </div>
 
@@ -246,7 +298,10 @@ export default function ProductList() {
           >
             {exporting ? "Exporting..." : "Export CSV"}
           </button>
-          <Link href="/products/add" className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+          <Link
+            href="/products/add"
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
             Add product
           </Link>
         </div>
@@ -258,7 +313,12 @@ export default function ProductList() {
       {/* Filters */}
       <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="sm:col-span-2">
-          <label htmlFor="search" className="text-xs font-medium text-slate-600">Search</label>
+          <label
+            htmlFor="search"
+            className="text-xs font-medium text-slate-600"
+          >
+            Search
+          </label>
           <input
             id="search"
             type="search"
@@ -273,7 +333,9 @@ export default function ProductList() {
         </div>
 
         <div>
-          <label htmlFor="stock" className="text-xs font-medium text-slate-600">Stock</label>
+          <label htmlFor="stock" className="text-xs font-medium text-slate-600">
+            Stock
+          </label>
           <select
             id="stock"
             className={inputClass}
@@ -284,13 +346,20 @@ export default function ProductList() {
             }}
           >
             {stockOptions.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
             ))}
           </select>
         </div>
 
         <div>
-          <label htmlFor="categoryFilter" className="text-xs font-medium text-slate-600">Category</label>
+          <label
+            htmlFor="categoryFilter"
+            className="text-xs font-medium text-slate-600"
+          >
+            Category
+          </label>
           <select
             id="categoryFilter"
             className={inputClass}
@@ -302,13 +371,20 @@ export default function ProductList() {
           >
             <option value="">All categories</option>
             {categories.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
             ))}
           </select>
         </div>
 
         <div>
-          <label htmlFor="minPrice" className="text-xs font-medium text-slate-600">Min price</label>
+          <label
+            htmlFor="minPrice"
+            className="text-xs font-medium text-slate-600"
+          >
+            Min price
+          </label>
           <input
             id="minPrice"
             type="number"
@@ -324,7 +400,12 @@ export default function ProductList() {
         </div>
 
         <div>
-          <label htmlFor="maxPrice" className="text-xs font-medium text-slate-600">Max price</label>
+          <label
+            htmlFor="maxPrice"
+            className="text-xs font-medium text-slate-600"
+          >
+            Max price
+          </label>
           <input
             id="maxPrice"
             type="number"
@@ -340,7 +421,9 @@ export default function ProductList() {
         </div>
 
         <div>
-          <label htmlFor="sort" className="text-xs font-medium text-slate-600">Sort by</label>
+          <label htmlFor="sort" className="text-xs font-medium text-slate-600">
+            Sort by
+          </label>
           <select
             id="sort"
             className={inputClass}
@@ -351,7 +434,9 @@ export default function ProductList() {
             }}
           >
             {sortOptions.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
             ))}
           </select>
         </div>
@@ -365,7 +450,10 @@ export default function ProductList() {
           {hasFilters ? (
             <>
               <p>No products match your filters.</p>
-              <button onClick={clearFilters} className="mt-3 text-sm text-blue-600 hover:underline">
+              <button
+                onClick={clearFilters}
+                className="mt-3 text-sm text-blue-600 hover:underline"
+              >
                 Clear filters
               </button>
             </>
@@ -374,14 +462,18 @@ export default function ProductList() {
           )}
         </div>
       ) : products.length > 0 && view === "grid" ? (
-        <div className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${loading ? "opacity-60" : ""}`}>
+        <div
+          className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${loading ? "opacity-60" : ""}`}
+        >
           {products.map((p) => (
             <ProductCard key={p.id} product={p} onDelete={handleDelete} />
           ))}
         </div>
       ) : (
         products.length > 0 && (
-          <div className={`overflow-x-auto rounded-lg border border-slate-200 bg-white ${loading ? "opacity-60" : ""}`}>
+          <div
+            className={`overflow-x-auto rounded-lg border border-slate-200 bg-white ${loading ? "opacity-60" : ""}`}
+          >
             <table className="w-full text-left text-sm">
               <thead className="border-b border-slate-200 bg-slate-100 text-slate-700">
                 <tr>
@@ -399,9 +491,16 @@ export default function ProductList() {
                   <tr key={p.id}>
                     <td className="px-4 py-3">{p.id}</td>
                     <td className="px-4 py-3 font-medium">
-                      <Link href={`/products/${p.id}`} className="flex items-center gap-3 hover:underline">
-                        <ProductThumb fileName={p.imageFileName} name={p.name} />
+                      <Link
+                        href={`/products/${p.id}`}
+                        className="flex items-center gap-3 hover:underline"
+                      >
+                        <ProductThumb
+                          fileName={p.imageFileName}
+                          name={p.name}
+                        />
                         <span>{p.name}</span>
+                        {p.isPublished && <PublicPill />}
                       </Link>
                     </td>
                     <td className="px-4 py-3">
@@ -413,8 +512,12 @@ export default function ProductList() {
                         <span className="text-slate-400">-</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{p.description ?? "-"}</td>
-                    <td className="px-4 py-3 text-right">{p.price.toFixed(2)}</td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {p.description ?? "-"}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {p.price.toFixed(2)}
+                    </td>
                     <td className="px-4 py-3 text-right">{p.quantity}</td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
@@ -448,7 +551,9 @@ export default function ProductList() {
           </p>
 
           <div className="flex items-center gap-3">
-            <label htmlFor="pageSize" className="sr-only">Rows per page</label>
+            <label htmlFor="pageSize" className="sr-only">
+              Rows per page
+            </label>
             <select
               id="pageSize"
               className="rounded-md border border-slate-300 bg-white px-2 py-1"
@@ -459,7 +564,9 @@ export default function ProductList() {
               }}
             >
               {pageSizes.map((n) => (
-                <option key={n} value={n}>{n} per page</option>
+                <option key={n} value={n}>
+                  {n} per page
+                </option>
               ))}
             </select>
 

@@ -68,10 +68,21 @@ const menu = [
     ),
   },
   {
+    label: "My shop",
+    href: "/my-shop",
+    adminOnly: false,
+    isActive: (p: string) => p === "/my-shop",
+    icon: (
+      <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M4 7h16l-1.5 5a3 3 0 01-5.5 0 3 3 0 01-5 0A3 3 0 015.5 12L4 7zM5 12v8h14v-8" />
+      </svg>
+    ),
+  },
+  {
     label: "Public shop",
     href: "/shop",
     adminOnly: false,
-    isActive: () => false, // the shop has its own layout without this sidebar
+    isActive: () => false, // the public shop has its own layout without this sidebar
     icon: (
       <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
         <path d="M3 9l1-5h16l1 5M3 9v11h18V9M3 9h18M9 20v-6h6v6" />
@@ -91,9 +102,16 @@ const menu = [
   },
 ];
 
-// Pages anyone can open without logging in: login, register, and the whole public shop.
+// Pages anyone can open without logging in: login, register, and the whole public shop (products and seller shops).
 function isPublicRoute(pathname: string) {
-  return pathname === "/login" || pathname === "/register" || pathname === "/shop" || pathname.startsWith("/shop/");
+  return (
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname === "/shop" ||
+    pathname.startsWith("/shop/") ||
+    pathname === "/shops" ||
+    pathname.startsWith("/shops/")
+  );
 }
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -119,9 +137,12 @@ function PublicShell({ children }: { children: React.ReactNode }) {
         <Link href="/shop" className="text-lg font-semibold">
           Product Manager
         </Link>
-        <nav className="flex items-center gap-2">
-          <Link href="/shop" className="rounded-md px-4 py-1.5 text-sm font-medium hover:bg-slate-100">
+        <nav className="flex items-center gap-1 sm:gap-2">
+          <Link href="/shop" className="rounded-md px-3 py-1.5 text-sm font-medium hover:bg-slate-100">
             Shop
+          </Link>
+          <Link href="/shops" className="rounded-md px-3 py-1.5 text-sm font-medium hover:bg-slate-100">
+            Shops
           </Link>
           <ThemeToggle />
           {ready && user ? (
@@ -135,7 +156,7 @@ function PublicShell({ children }: { children: React.ReactNode }) {
           ) : (
             ready && (
               <>
-                <Link href="/login" className="rounded-md px-4 py-1.5 text-sm font-medium hover:bg-slate-100">
+                <Link href="/login" className="rounded-md px-3 py-1.5 text-sm font-medium hover:bg-slate-100">
                   Login
                 </Link>
                 <Link

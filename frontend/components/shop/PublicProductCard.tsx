@@ -21,6 +21,16 @@ export default function PublicProductCard({ product: p }: { product: PublicProdu
           <span className="shrink-0 font-semibold">{money(p.price)}</span>
         </div>
 
+        {/* Only shown when the seller has chosen to have a shop page */}
+        {p.shopSlug && p.shopName && (
+          <p className="text-xs text-slate-500">
+            by{" "}
+            <Link href={`/shops/${p.shopSlug}`} className="font-medium hover:underline">
+              {p.shopName}
+            </Link>
+          </p>
+        )}
+
         {p.category && (
           <span className="w-fit rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{p.category}</span>
         )}
