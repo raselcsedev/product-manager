@@ -34,11 +34,14 @@ builder.Services.AddCors(options =>
 });
 
 // 3. Rate limiting for the PUBLIC (not logged in) endpoints.
-// Each IP address may make this many requests per minute; more gets "429 Too Many Requests".
+// Each IP address may make this many requests; more gets "429 Too Many Requests".
 var publicPerMinute = builder.Configuration.GetValue<int?>("RateLimit:PublicPerMinute") ?? 120;
+var inquiriesPer10Minutes = builder.Configuration.GetValue<int?>("RateLimit:InquiriesPer10Minutes") ?? 5;
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // Browsing the public shop
     options.AddPolicy("public", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
             httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
@@ -46,6 +49,17 @@ builder.Services.AddRateLimiter(options =>
             {
                 PermitLimit = publicPerMinute,
                 Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            }));
+
+    // Sending a message to a seller: much stricter, because this is where strangers WRITE to the database
+    options.AddPolicy("inquiry", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = inquiriesPer10Minutes,
+                Window = TimeSpan.FromMinutes(10),
                 QueueLimit = 0,
             }));
 });
@@ -142,7 +156,7 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// The website (Next.js) now calls this API from its SERVER to build the shop pages, so every
+// The website (Next.js) calls this API from its SERVER to build the shop pages, so every
 // visitor's page view would look like it comes from ONE address and share one rate limit.
 // The website therefore passes the visitor's real address in "X-Forwarded-For", and we use it here.
 // We only believe that header when it comes from a trusted proxy. By default that means the

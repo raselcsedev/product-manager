@@ -39,6 +39,10 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         // The public shop limits requests per IP address. All test requests come from the same
         // "address", so the limit is raised high enough that it never gets in the way of the tests.
         Environment.SetEnvironmentVariable("RateLimit__PublicPerMinute", "100000");
+
+        // Sending messages to sellers has a much stricter limit (5 per 10 minutes per address).
+        // It is raised for the same reason.
+        Environment.SetEnvironmentVariable("RateLimit__InquiriesPer10Minutes", "100000");
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

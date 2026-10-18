@@ -22,6 +22,7 @@ public class AppDbContext : DbContext
     public DbSet<AppUser> Users => Set<AppUser>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<Inquiry> Inquiries => Set<Inquiry>();
 
     // MySQL does not store "this DateTime is UTC". Without this, dates come back with an unknown kind,
     // and the browser would read them as local time (wrong by hours). Now they are always marked UTC.
@@ -73,6 +74,25 @@ public class AppDbContext : DbContext
         // The public shop only reads published products
         modelBuilder.Entity<Product>().HasIndex(p => new { p.IsPublished, p.Id });
 
+        // Inquiries (messages from visitors to sellers)
+        // - deleting the seller deletes their messages
+        // - deleting the product keeps the message and only clears its product link
+        modelBuilder.Entity<Inquiry>()
+            .HasOne<AppUser>()
+            .WithMany()
+            .HasForeignKey(i => i.OwnerId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Inquiry>()
+            .HasOne<Product>()
+            .WithMany()
+            .HasForeignKey(i => i.ProductId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Inquiry>().HasIndex(i => new { i.OwnerId, i.CreatedAt });
+        modelBuilder.Entity<Inquiry>().HasIndex(i => new { i.OwnerId, i.IsRead });
+        modelBuilder.Entity<Inquiry>().HasIndex(i => new { i.OwnerId, i.SenderEmail, i.CreatedAt });
+
         // Fast "newest first" lookups for the activity page
         modelBuilder.Entity<AuditLog>().HasIndex(a => new { a.UserId, a.CreatedAt });
         modelBuilder.Entity<AuditLog>().HasIndex(a => a.CreatedAt);
@@ -84,6 +104,7 @@ public class AppDbContext : DbContext
     //  and store a matching AuditLog row. Controllers cannot forget to log, because they
     //  never do it themselves.
     //  (Only SaveChangesAsync is covered. This app never uses the non-async SaveChanges.)
+    //  Inquiries are NOT logged here: they are written by visitors, not by a logged-in user.
     // =====================================================================
 
     private sealed record PendingAudit(string Action, string EntityType, object Entity, string EntityName, string? Details);

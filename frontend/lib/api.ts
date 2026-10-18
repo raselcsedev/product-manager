@@ -1,4 +1,5 @@
 import { ActivityQueryParams, AuditLog } from "@/types/activity";
+import { Inquiry, InquiryInput, InquiryQueryParams } from "@/types/inquiry";
 import { PagedResult, Product, ProductInput, ProductQueryParams, ProductSummary } from "@/types/product";
 import {
   MyShop,
@@ -71,9 +72,13 @@ async function send(path: string, options?: RequestInit): Promise<Response> {
     throw new Error("The file is too large.");
   }
 
-  // 429 = the public shop's request limit was reached
+  // 429 = a request limit was reached. The server's own explanation (if it sent one) is more helpful
+  // than a generic text, for example "You have already sent this seller several messages today."
   if (res.status === 429) {
-    throw new Error("Too many requests. Please wait a moment and try again.");
+    const text = await readError(res.clone());
+    throw new Error(
+      text.startsWith("Request failed") ? "Too many requests. Please wait a moment and try again." : text
+    );
   }
 
   return res;
@@ -114,6 +119,25 @@ export const saveMyShop = (input: MyShopInput) =>
   request<MyShop>("/api/my-shop", { method: "PUT", body: JSON.stringify(input) });
 
 export const deleteMyShop = () => request<void>("/api/my-shop", { method: "DELETE" });
+
+// ---- Inbox: messages from visitors (the seller reads them) ----
+export function getInquiries(params: InquiryQueryParams) {
+  const qs = new URLSearchParams();
+  if (params.unread) qs.set("unread", "true");
+  if (params.page) qs.set("page", String(params.page));
+  if (params.pageSize) qs.set("pageSize", String(params.pageSize));
+
+  return request<PagedResult<Inquiry>>(`/api/inquiries?${qs.toString()}`);
+}
+
+export const getUnreadInquiryCount = () => request<{ count: number }>("/api/inquiries/unread-count");
+
+export const setInquiryRead = (id: number, isRead: boolean) =>
+  request<void>(`/api/inquiries/${id}/read`, { method: "PUT", body: JSON.stringify({ isRead }) });
+
+export const markAllInquiriesRead = () => request<void>("/api/inquiries/read-all", { method: "PUT" });
+
+export const deleteInquiry = (id: number) => request<void>(`/api/inquiries/${id}`, { method: "DELETE" });
 
 // ---- Admin: user management (Admin role only) ----
 export const getAdminUsers = () => request<AdminUser[]>("/api/admin/users");
@@ -164,6 +188,13 @@ export const getPublicShops = () => request<PublicShop[]>("/api/public/shops");
 
 export const getPublicShop = (slug: string) =>
   request<PublicShop>(`/api/public/shops/${encodeURIComponent(slug)}`);
+
+// A visitor sends a message to the seller of a published product
+export const sendInquiry = (productId: number, input: InquiryInput) =>
+  request<{ message: string }>(`/api/public/products/${productId}/inquiries`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 
 // ---- Categories ----
 export const getCategories = () => request<Category[]>("/api/categories");

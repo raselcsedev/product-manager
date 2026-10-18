@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import AuthGuard from "@/components/AuthGuard";
 import ThemeToggle from "@/components/ThemeToggle";
 import UserMenu from "@/components/UserMenu";
 import { useAuth } from "@/context/AuthContext";
+import { getUnreadInquiryCount } from "@/lib/api";
 
 const iconClass = "h-5 w-5 shrink-0";
 
@@ -53,6 +54,17 @@ const menu = [
     icon: (
       <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
         <path d="M20.6 13.4l-7.2 7.2a2 2 0 01-2.8 0L3 13V3h10l7.6 7.6a2 2 0 010 2.8zM7.5 7.5h.01" />
+      </svg>
+    ),
+  },
+  {
+    label: "Inbox",
+    href: "/inbox",
+    adminOnly: false,
+    isActive: (p: string) => p === "/inbox",
+    icon: (
+      <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M3 7l9 6 9-6M3 7v10a1 1 0 001 1h16a1 1 0 001-1V7M3 7a1 1 0 011-1h16a1 1 0 011 1" />
       </svg>
     ),
   },
@@ -179,6 +191,38 @@ function PrivateShell({ pathname, children }: { pathname: string; children: Reac
   const { isAdmin } = useAuth();
   const [open, setOpen] = useState(false);
 
+  // The number of unread messages shown next to "Inbox"
+  const [unread, setUnread] = useState(0);
+  const [inboxTick, setInboxTick] = useState(0);
+
+  // The inbox page announces every change (read, delete ...), so the number stays right.
+  useEffect(() => {
+    const onChanged = () => setInboxTick((t) => t + 1);
+    window.addEventListener("inbox:changed", onChanged);
+    return () => window.removeEventListener("inbox:changed", onChanged);
+  }, []);
+
+  // Refresh the number when you move to another page, after inbox changes, and once a minute (new messages).
+  useEffect(() => {
+    let cancelled = false;
+
+    const refresh = () =>
+      getUnreadInquiryCount()
+        .then((r) => {
+          if (!cancelled) setUnread(r.count);
+        })
+        .catch(() => {
+          // the number is just a hint, so a failure is ignored
+        });
+
+    refresh();
+    const timer = setInterval(refresh, 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [pathname, inboxTick]);
+
   // Hiding a menu item is only for convenience. The real protection is on the server.
   const visibleMenu = menu.filter((item) => !item.adminOnly || isAdmin);
   const currentTitle =
@@ -213,6 +257,14 @@ function PrivateShell({ pathname, children }: { pathname: string; children: Reac
               >
                 {item.icon}
                 {item.label}
+                {item.href === "/inbox" && unread > 0 && (
+                  <span
+                    aria-label={`${unread} unread message${unread === 1 ? "" : "s"}`}
+                    className="ml-auto rounded-full bg-blue-600 px-2 py-0.5 text-xs font-medium text-white"
+                  >
+                    {unread > 99 ? "99+" : unread}
+                  </span>
+                )}
               </Link>
             );
           })}

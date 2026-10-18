@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ProductThumb from "@/components/ProductThumb";
 import AvailabilityBadge from "@/components/shop/AvailabilityBadge";
+import InquiryForm from "@/components/shop/InquiryForm";
 import PublicProductCard from "@/components/shop/PublicProductCard";
 import { money } from "@/lib/format";
 import { getPublicProductServer, getRelatedServer } from "@/lib/serverApi";
@@ -56,6 +57,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 // A server component: the whole product is part of the HTML the server sends.
+// The contact form at the bottom is a client component, because it needs to react to typing.
 export default async function ShopProductPage({ params }: PageProps) {
   const id = parseId(params.id);
   if (!id) notFound();
@@ -144,6 +146,8 @@ export default async function ShopProductPage({ params }: PageProps) {
           )}
         </div>
       </div>
+
+      <InquiryForm productId={product.id} productName={product.name} />
 
       {related.length > 0 && (
         <section className="space-y-3">
