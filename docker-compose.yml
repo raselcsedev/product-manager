@@ -1,0 +1,86 @@
+# Runs the whole app: database + API + website + a proxy that provides https.
+#
+#   1. copy .env.example to .env and fill it in
+#   2. docker compose up -d --build
+#
+# Only the proxy ("caddy") is reachable from outside. The database, the API and the website
+# talk to each other on a private network.
+
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
+      MYSQL_DATABASE: product_crud
+      MYSQL_USER: app
+      MYSQL_PASSWORD: ${MYSQL_APP_PASSWORD:?set MYSQL_APP_PASSWORD in .env}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Server=db;Port=3306;Database=product_crud;User=app;Password=${MYSQL_APP_PASSWORD};"
+      Jwt__Key: ${JWT_KEY:?set JWT_KEY in .env}
+      Cors__AllowedOrigin: ${SITE_URL:?set SITE_URL in .env}
+      Database__AutoCreate: "true"   # creates the tables the first time, when the database is empty
+    volumes:
+      - uploads:/app/uploads
+    healthcheck:
+      # the .NET image has no curl, so a tiny request is made with bash itself
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health/ready HTTP/1.0\\r\\n\\r\\n' >&3 && head -n1 <&3 | grep -q ' 200 '"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # The browser calls the API on the same address as the website (the proxy sends /api/* to the API)
+        NEXT_PUBLIC_API_URL: ${SITE_URL}
+        NEXT_PUBLIC_SITE_URL: ${SITE_URL}
+        NEXT_PUBLIC_CURRENCY: ${CURRENCY:-}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      # How the website's SERVER reaches the API (inside the private network)
+      API_URL: http://backend:8080
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - frontend
+      - backend
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?set SITE_ADDRESS in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data      # the https certificates
+      - caddy-config:/config
+
+volumes:
+  db-data:
+  uploads:
+  caddy-data:
+  caddy-config:

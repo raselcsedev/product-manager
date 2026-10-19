@@ -13,16 +13,31 @@ using ProductApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Database (MySQL via XAMPP)
+// ---- Server limits ----
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.AddServerHeader = false;                     // do not announce which web server this is
+    options.Limits.MaxRequestBodySize = 5 * 1024 * 1024; // nobody needs to send more than 5 MB (image uploads are capped at 3 MB)
+});
+
+// ---- Settings that must be safe in production ----
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
+var allowedOrigin = builder.Configuration["Cors:AllowedOrigin"] ?? "http://localhost:3000";
+var jwtKey = builder.Configuration["Jwt:Key"];
+
+// In Production the server refuses to start with the placeholder secret, a localhost origin or an empty database password.
+StartupChecks.ValidateProductionSettings(builder.Environment.EnvironmentName, jwtKey, allowedOrigin, connectionString);
+
+if (string.IsNullOrWhiteSpace(jwtKey) || jwtKey.Length < 32)
+    throw new InvalidOperationException("Jwt:Key must be at least 32 characters. Set it in appsettings.json, with dotnet user-secrets, or as the environment variable Jwt__Key.");
+
+// 1. Database (MySQL)
 // AppDbContext needs to know who is logged in, so it can write the "who did it" part of the activity history.
 builder.Services.AddHttpContextAccessor();
-
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
 // 2. CORS: allow the Next.js app to call this API
-var allowedOrigin = builder.Configuration["Cors:AllowedOrigin"] ?? "http://localhost:3000";
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
@@ -33,42 +48,53 @@ builder.Services.AddCors(options =>
               .WithExposedHeaders("Content-Disposition", "X-Export-Truncated"));
 });
 
-// 3. Rate limiting for the PUBLIC (not logged in) endpoints.
-// Each IP address may make this many requests; more gets "429 Too Many Requests".
+// 3. Rate limiting. Each IP address may make this many requests; more gets "429 Too Many Requests".
 var publicPerMinute = builder.Configuration.GetValue<int?>("RateLimit:PublicPerMinute") ?? 120;
 var inquiriesPer10Minutes = builder.Configuration.GetValue<int?>("RateLimit:InquiriesPer10Minutes") ?? 5;
+var authPer5Minutes = builder.Configuration.GetValue<int?>("RateLimit:AuthPer5Minutes") ?? 20;
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // A friendly JSON answer (the website shows "message") plus a Retry-After hint
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+            context.HttpContext.Response.Headers["Retry-After"] = ((int)Math.Ceiling(retryAfter.TotalSeconds)).ToString();
+
+        await context.HttpContext.Response.WriteAsJsonAsync(
+            new { message = "Too many requests. Please wait a moment and try again." }, cancellationToken);
+    };
 
     // Browsing the public shop
     options.AddPolicy("public", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
             httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = publicPerMinute,
-                Window = TimeSpan.FromMinutes(1),
-                QueueLimit = 0,
-            }));
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = publicPerMinute, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
 
-    // Sending a message to a seller: much stricter, because this is where strangers WRITE to the database
+    // Sending a message to a seller: strict, because strangers WRITE to the database here
     options.AddPolicy("inquiry", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
             httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = inquiriesPer10Minutes,
-                Window = TimeSpan.FromMinutes(10),
-                QueueLimit = 0,
-            }));
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = inquiriesPer10Minutes, Window = TimeSpan.FromMinutes(10), QueueLimit = 0 }));
+
+    // Login, register and password change: slows down password guessing and mass sign-ups from one address
+    options.AddPolicy("auth", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = authPer5Minutes, Window = TimeSpan.FromMinutes(5), QueueLimit = 0 }));
 });
 
-// 4. Authentication (JWT)
-var jwtKey = builder.Configuration["Jwt:Key"];
-if (string.IsNullOrWhiteSpace(jwtKey) || jwtKey.Length < 32)
-    throw new InvalidOperationException("Jwt:Key must be at least 32 characters. Set it in appsettings.json or with dotnet user-secrets.");
+// Lock an account (or email address) for a while after too many wrong passwords
+var maxFailedLogins = builder.Configuration.GetValue<int?>("Auth:MaxFailedAttempts") ?? 5;
+var lockoutMinutes = builder.Configuration.GetValue<int?>("Auth:LockoutMinutes") ?? 15;
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton(sp =>
+    new LoginThrottle(maxFailedLogins, TimeSpan.FromMinutes(lockoutMinutes), sp.GetRequiredService<TimeProvider>()));
 
+// 4. Authentication (JWT)
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddSingleton<ImageStorage>(); // saves and deletes uploaded product images
 builder.Services
@@ -128,7 +154,11 @@ builder.Services
     });
 builder.Services.AddAuthorization();
 
-// 5. Controllers + Swagger (with an Authorize button for the token)
+// 5. Errors: when something unexpected goes wrong, answer with a short JSON message and NEVER with
+// stack traces or internal details. (The full details are written to the server log instead.)
+builder.Services.AddProblemDetails();
+
+// 6. Controllers + Swagger (with an Authorize button for the token)
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -156,15 +186,58 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// The website (Next.js) calls this API from its SERVER to build the shop pages, so every
-// visitor's page view would look like it comes from ONE address and share one rate limit.
-// The website therefore passes the visitor's real address in "X-Forwarded-For", and we use it here.
-// We only believe that header when it comes from a trusted proxy. By default that means the
-// same machine (localhost), so a visitor on the internet cannot fake it.
-// When the website runs on a DIFFERENT machine in production, add its address to KnownProxies.
+// ---- A fresh database (used by the Docker setup) ----
+// With Database:AutoCreate=true the tables are created from the model when the database is empty.
+// It does nothing when the tables already exist. (It is not a migration system: it never changes existing tables.)
+if (app.Configuration.GetValue<bool>("Database:AutoCreate"))
+{
+    for (var attempt = 1; ; attempt++)
+    {
+        try
+        {
+            using var scope = app.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await db.Database.EnsureCreatedAsync();
+            app.Logger.LogInformation("The database is ready.");
+            break;
+        }
+        catch (Exception ex) when (attempt < 10)
+        {
+            app.Logger.LogWarning(ex, "The database is not ready yet (attempt {Attempt} of 10). Trying again in 3 seconds.", attempt);
+            await Task.Delay(TimeSpan.FromSeconds(3));
+        }
+    }
+}
+
+// ---- The request pipeline. Order matters. ----
+
+// The website (Next.js) and a reverse proxy pass the visitor's real address in "X-Forwarded-For".
+// We only believe that header when it comes from a trusted proxy: by default only this same machine.
+// In Docker, the environment variable ASPNETCORE_FORWARDEDHEADERS_ENABLED=true trusts the private network instead.
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor,
+});
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler(); // short JSON error, details only in the log
+    app.UseHsts();             // "always use https" (only sent on https requests)
+}
+
+// Security headers on every response. (This API returns JSON and images, never web pages, so it
+// can use the strictest content policy. It is skipped in Development, because Swagger's page needs scripts.)
+app.Use(async (context, next) =>
+{
+    var headers = context.Response.Headers;
+    headers["X-Content-Type-Options"] = "nosniff";
+    headers["X-Frame-Options"] = "DENY";
+    headers["Referrer-Policy"] = "no-referrer";
+    headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+    if (!app.Environment.IsDevelopment())
+        headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'";
+
+    await next();
 });
 
 if (app.Environment.IsDevelopment())
@@ -173,26 +246,26 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Serve uploaded images at http://localhost:5080/uploads/products/<file>
-// (backend/uploads is created automatically)
+// Serve uploaded images at /uploads/products/<file> (backend/uploads is created automatically)
 var uploadsRoot = Path.Combine(builder.Environment.ContentRootPath, "uploads");
 Directory.CreateDirectory(uploadsRoot);
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(uploadsRoot),
     RequestPath = "/uploads",
-    OnPrepareResponse = ctx =>
-    {
-        // Stop browsers from "guessing" a different content type for these files.
-        ctx.Context.Response.Headers["X-Content-Type-Options"] = "nosniff";
-    },
 });
 
-// Order matters: CORS -> rate limit -> who are you? -> are you allowed? -> controllers
 app.UseCors("Frontend");
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// ---- Health checks (for Docker and monitoring). They say "ok" or "not ok", nothing more. ----
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+app.MapGet("/health/ready", async (AppDbContext db) =>
+    await db.Database.CanConnectAsync()
+        ? Results.Ok(new { status = "ready" })
+        : Results.StatusCode(StatusCodes.Status503ServiceUnavailable));
 
 app.Run();

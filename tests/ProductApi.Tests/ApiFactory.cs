@@ -43,6 +43,9 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         // Sending messages to sellers has a much stricter limit (5 per 10 minutes per address).
         // It is raised for the same reason.
         Environment.SetEnvironmentVariable("RateLimit__InquiriesPer10Minutes", "100000");
+
+        // Login, register and password change are limited per address too (20 per 5 minutes). Raised for the tests.
+        Environment.SetEnvironmentVariable("RateLimit__AuthPer5Minutes", "100000");
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

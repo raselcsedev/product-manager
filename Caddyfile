@@ -1,0 +1,25 @@
+# Caddy is the "front door": it gets and renews free https certificates by itself,
+# and sends each request to the right container.
+
+{$SITE_ADDRESS} {
+	encode zstd gzip
+
+	# The API and the uploaded pictures
+	handle /api/* {
+		reverse_proxy backend:8080
+	}
+	handle /uploads/* {
+		reverse_proxy backend:8080
+	}
+
+	# Everything else is the website
+	handle {
+		reverse_proxy frontend:3000
+	}
+
+	# Keep the access log short and free of secrets
+	log {
+		output stdout
+		format console
+	}
+}
