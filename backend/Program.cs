@@ -186,10 +186,11 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// ---- A fresh database (used by the Docker setup) ----
-// With Database:AutoCreate=true the tables are created from the model when the database is empty.
-// It does nothing when the tables already exist. (It is not a migration system: it never changes existing tables.)
-if (app.Configuration.GetValue<bool>("Database:AutoCreate"))
+// ---- Database migrations (used by the Docker setup) ----
+// With Database:AutoMigrate=true, every migration that has not been applied yet is applied when the API starts.
+// That creates all tables on an empty database, and later adds new columns and tables when the app changes.
+// (On your own computer, leave it off and run "dotnet ef database update" yourself. See backend/MIGRATIONS.md.)
+if (app.Configuration.GetValue<bool>("Database:AutoMigrate"))
 {
     for (var attempt = 1; ; attempt++)
     {
@@ -197,8 +198,8 @@ if (app.Configuration.GetValue<bool>("Database:AutoCreate"))
         {
             using var scope = app.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            await db.Database.EnsureCreatedAsync();
-            app.Logger.LogInformation("The database is ready.");
+            await db.Database.MigrateAsync();
+            app.Logger.LogInformation("The database is up to date.");
             break;
         }
         catch (Exception ex) when (attempt < 10)

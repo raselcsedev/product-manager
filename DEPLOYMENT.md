@@ -51,10 +51,21 @@ docker compose up -d --build
 ```
 Your database and uploaded pictures live in Docker volumes, so they survive updates.
 
-> **Database changes.** `Database__AutoCreate` only creates tables when the database is empty. When a new version
-> needs a new column or table, run the matching SQL file from `backend/` against the database:
-> `docker compose exec -T db mysql -uroot -p"$MYSQL_ROOT_PASSWORD" product_crud < backend/the-file.sql`
-> (A proper migration tool, such as EF Core Migrations, is the long-term answer.)
+### Database changes
+The API applies **migrations** by itself when it starts (`Database__AutoMigrate`). When a new version needs a new
+column or table, the migration for it is part of the new version, so `docker compose up -d --build` is all you do.
+Take a backup first (see below). A migration that removes a column removes its data.
+
+Want to review the SQL before it runs? Turn `Database__AutoMigrate` off in `docker-compose.yml`, and from `backend/`:
+```bash
+dotnet ef migrations script --idempotent -o update.sql
+```
+Then run `update.sql` against the database yourself. More in `backend/MIGRATIONS.md`.
+
+> **If you started this stack before migrations existed** (it created the tables another way), the old database
+> has tables but no migration history, and the API will stop with "table already exists". Start clean with
+> `docker compose down -v` (this DELETES the Docker database and uploads) and `docker compose up -d --build` again,
+> or restore a backup into the fresh database.
 
 ## Backups (do this before you need it)
 ```bash

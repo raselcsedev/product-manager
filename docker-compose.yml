@@ -36,7 +36,7 @@ services:
       ConnectionStrings__DefaultConnection: "Server=db;Port=3306;Database=product_crud;User=app;Password=${MYSQL_APP_PASSWORD};"
       Jwt__Key: ${JWT_KEY:?set JWT_KEY in .env}
       Cors__AllowedOrigin: ${SITE_URL:?set SITE_URL in .env}
-      Database__AutoCreate: "true"   # creates the tables the first time, when the database is empty
+      Database__AutoMigrate: "true"  # applies database migrations (creates or updates the tables) when the API starts
     volumes:
       - uploads:/app/uploads
     healthcheck:
