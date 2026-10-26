@@ -119,6 +119,8 @@ function isPublicRoute(pathname: string) {
   return (
     pathname === "/login" ||
     pathname === "/register" ||
+    pathname === "/forgot-password" ||
+    pathname === "/reset-password" ||
     pathname === "/shop" ||
     pathname.startsWith("/shop/") ||
     pathname === "/shops" ||

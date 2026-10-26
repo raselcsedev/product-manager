@@ -11,7 +11,7 @@ const inputClass =
   "mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600";
 
 export default function ProfilePage() {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, replaceSession } = useAuth();
 
   // ---- Name form ----
   const [name, setName] = useState(user?.name ?? "");
@@ -75,11 +75,13 @@ export default function ProfilePage() {
 
     setPasswordSaving(true);
     try {
-      await changePassword(currentPassword, newPassword);
+      // The server ends every other session and answers with a fresh token for this one
+      const session = await changePassword(currentPassword, newPassword);
+      replaceSession(session);
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      setPasswordMessage({ type: "success", text: "Your password was changed." });
+      setPasswordMessage({ type: "success", text: "Your password was changed. Every other device was logged out." });
     } catch (err) {
       setPasswordMessage({ type: "error", text: err instanceof Error ? err.message : "Failed to change password." });
     } finally {

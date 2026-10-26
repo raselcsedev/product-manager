@@ -67,6 +67,16 @@ Then run `update.sql` against the database yourself. More in `backend/MIGRATIONS
 > `docker compose down -v` (this DELETES the Docker database and uploads) and `docker compose up -d --build` again,
 > or restore a backup into the fresh database.
 
+## Email (password reset)
+"Forgot password" sends an email with a link, so the API needs an SMTP server. Fill in the `SMTP_...` lines in `.env`
+(host, port, user name, password, and the "from" address). Any provider works. Then `docker compose up -d`.
+
+Without `SMTP_HOST` the API starts normally, but nothing is sent: the log only says an email was **not** sent
+(it deliberately does not print the reset link, because anybody who can read the log could use it).
+To test: ask for a reset for your own email, and check `docker compose logs -f backend` for errors.
+Emails wait in a queue in memory and are retried 3 times, so a short mail-server outage is harmless,
+but emails still waiting when the API restarts are lost.
+
 ## Backups (do this before you need it)
 ```bash
 # the database

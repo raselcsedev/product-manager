@@ -78,7 +78,12 @@ public class ActivityTests
 
         var change = await user.Client.PutAsJsonAsync("/api/auth/password",
             new { currentPassword = user.Password, newPassword });
-        Assert.Equal(HttpStatusCode.NoContent, change.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, change.StatusCode);
+
+        // The password change ended the old token. Carry on with the fresh one the server returned.
+        var fresh = await change.ReadAsync<AuthResponse>();
+        user.Client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", fresh.Token);
 
         var response = await user.Client.GetAsync("/api/activity?entityType=User");
         var raw = await response.Content.ReadAsStringAsync();

@@ -12,6 +12,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   updateUser: (user: AuthUser) => void; // after the profile changed on the server
+  replaceSession: (res: AuthResponse) => void; // after a password change: carry on with the fresh token
   logout: () => void;
 }
 
@@ -59,6 +60,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     startSession(await registerUser({ name, email, password }));
   }, []);
 
+  const replaceSession = useCallback((res: AuthResponse) => {
+    startSession(res);
+  }, []);
+
   const updateUser = useCallback((next: AuthUser) => {
     const current = loadAuth();
     if (current) saveAuth({ ...current, user: next });
@@ -72,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, isAdmin: user?.role === "Admin", ready, login, register, updateUser, logout }}
+      value={{ user, isAdmin: user?.role === "Admin", ready, login, register, updateUser, replaceSession, logout }}
     >
       {children}
     </AuthContext.Provider>

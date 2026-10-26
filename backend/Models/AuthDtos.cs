@@ -79,3 +79,23 @@ public class UpdateRoleRequest
     [RegularExpression("^(Admin|User)$", ErrorMessage = "Role must be Admin or User.")]
     public string Role { get; set; } = string.Empty;
 }
+
+// POST /api/auth/forgot-password
+public class ForgotPasswordRequest
+{
+    [Required(ErrorMessage = "Email is required.")]
+    [StringLength(255, ErrorMessage = "Email must be 255 characters or fewer.")]
+    public string Email { get; set; } = string.Empty;
+}
+
+// POST /api/auth/reset-password
+public class ResetPasswordRequest
+{
+    [Required(ErrorMessage = "The reset link is incomplete.")]
+    [StringLength(200, ErrorMessage = "The reset link is not valid.")]
+    public string Token { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "New password is required.")]
+    [StringLength(72, MinimumLength = 8, ErrorMessage = "New password must be between 8 and 72 characters.")]
+    public string NewPassword { get; set; } = string.Empty;
+}

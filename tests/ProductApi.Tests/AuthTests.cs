@@ -144,7 +144,7 @@ public class AuthTests
         var withNew = await anonymous.PostAsJsonAsync("/api/auth/login", new { email = user.Email, password = "BrandNewPass456!" });
         var withOld = await anonymous.PostAsJsonAsync("/api/auth/login", new { email = user.Email, password = user.Password });
 
-        Assert.Equal(HttpStatusCode.NoContent, change.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, change.StatusCode);
         Assert.Equal(HttpStatusCode.OK, withNew.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, withOld.StatusCode);
     }

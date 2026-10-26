@@ -97,6 +97,16 @@ builder.Services.AddSingleton(sp =>
 // 4. Authentication (JWT)
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddSingleton<ImageStorage>(); // saves and deletes uploaded product images
+
+// Email (used for password reset). With Email:Smtp:Host set, real emails are sent.
+// Without it they are only written to the log (see LoggingEmailSender).
+builder.Services.AddSingleton<EmailQueue>();
+if (!string.IsNullOrWhiteSpace(builder.Configuration["Email:Smtp:Host"]))
+    builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
+else
+    builder.Services.AddSingleton<IEmailSender>(sp => new LoggingEmailSender(
+        sp.GetRequiredService<ILogger<LoggingEmailSender>>(), logContents: builder.Environment.IsDevelopment()));
+builder.Services.AddHostedService<EmailBackgroundService>();
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -133,22 +143,31 @@ builder.Services
                     return;
                 }
 
-                var role = await db.Users
+                var current = await db.Users
                     .AsNoTracking()
                     .Where(u => u.Id == userId)
-                    .Select(u => u.Role)
+                    .Select(u => new { u.Role, u.TokenVersion })
                     .FirstOrDefaultAsync();
 
-                if (role is null)
+                if (current is null)
                 {
                     context.Fail("User no longer exists.");
+                    return;
+                }
+
+                // A password change or reset adds 1 to the user's version. Tokens made before that carry
+                // the old number and are refused. (Tokens from before this feature have no number: they count as 0.)
+                var tokenVersion = int.TryParse(context.Principal?.FindFirst("tv")?.Value, out var tv) ? tv : 0;
+                if (tokenVersion != current.TokenVersion)
+                {
+                    context.Fail("This session has ended. Please log in again.");
                     return;
                 }
 
                 // Replace whatever role the token carried with the real one from the database.
                 foreach (var claim in identity.FindAll("role").ToList())
                     identity.RemoveClaim(claim);
-                identity.AddClaim(new Claim("role", role));
+                identity.AddClaim(new Claim("role", current.Role));
             },
         };
     });

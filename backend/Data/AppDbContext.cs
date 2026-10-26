@@ -23,6 +23,7 @@ public class AppDbContext : DbContext
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<Inquiry> Inquiries => Set<Inquiry>();
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
 
     // MySQL does not store "this DateTime is UTC". Without this, dates come back with an unknown kind,
     // and the browser would read them as local time (wrong by hours). Now they are always marked UTC.
@@ -92,6 +93,14 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Inquiry>().HasIndex(i => new { i.OwnerId, i.CreatedAt });
         modelBuilder.Entity<Inquiry>().HasIndex(i => new { i.OwnerId, i.IsRead });
         modelBuilder.Entity<Inquiry>().HasIndex(i => new { i.OwnerId, i.SenderEmail, i.CreatedAt });
+
+        // Password reset links: looked up by the hash of their secret, and deleted together with their user
+        modelBuilder.Entity<PasswordResetToken>().HasIndex(t => t.TokenHash).IsUnique();
+        modelBuilder.Entity<PasswordResetToken>()
+            .HasOne<AppUser>()
+            .WithMany()
+            .HasForeignKey(t => t.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         // Fast "newest first" lookups for the activity page
         modelBuilder.Entity<AuditLog>().HasIndex(a => new { a.UserId, a.CreatedAt });

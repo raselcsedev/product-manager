@@ -36,6 +36,12 @@ services:
       ConnectionStrings__DefaultConnection: "Server=db;Port=3306;Database=product_crud;User=app;Password=${MYSQL_APP_PASSWORD};"
       Jwt__Key: ${JWT_KEY:?set JWT_KEY in .env}
       Cors__AllowedOrigin: ${SITE_URL:?set SITE_URL in .env}
+      Site__Url: ${SITE_URL}            # used for the links in emails
+      Email__Smtp__Host: ${SMTP_HOST:-}
+      Email__Smtp__Port: ${SMTP_PORT:-587}
+      Email__Smtp__Username: ${SMTP_USERNAME:-}
+      Email__Smtp__Password: ${SMTP_PASSWORD:-}
+      Email__Smtp__From: ${SMTP_FROM:-}
       Database__AutoMigrate: "true"  # applies database migrations (creates or updates the tables) when the API starts
     volumes:
       - uploads:/app/uploads

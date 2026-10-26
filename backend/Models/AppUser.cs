@@ -22,6 +22,10 @@ public class AppUser
 
     public DateTime CreatedAt { get; set; }
 
+    // Every login token carries the version it was made with. Changing or resetting the password adds 1,
+    // so all older tokens (on every other device) stop working at once.
+    public int TokenVersion { get; set; }
+
     // ---- Optional public shop page (the user turns it on themselves) ----
 
     // The name visitors see, for example "Rasel's Gadgets". It is NOT the account name.

@@ -29,6 +29,7 @@ public class TokenService
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim("name", user.Name),
                 new Claim("role", user.Role),
+                new Claim("tv", user.TokenVersion.ToString()),
             }),
             Expires = expiresAt,
             Issuer = _config["Jwt:Issuer"],

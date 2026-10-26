@@ -1,9 +1,12 @@
+using System.Collections.Concurrent;
 using System.Data.Common;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using ProductApi.Data;
+using ProductApi.Services;
 
 namespace ProductApi.Tests;
 
@@ -48,10 +51,20 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         Environment.SetEnvironmentVariable("RateLimit__AuthPer5Minutes", "100000");
     }
 
+    // Every email the app "sends" during the tests ends up here, so a test can read the reset link.
+    public CapturingEmailSender Emails { get; } = new();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         // "Testing" (not "Development"), so user-secrets and Swagger are not involved.
         builder.UseEnvironment("Testing");
+
+        // Replace the real email sender
+        builder.ConfigureServices(services =>
+        {
+            services.RemoveAll<IEmailSender>();
+            services.AddSingleton<IEmailSender>(Emails);
+        });
     }
 
     // Runs once, before the first test: builds a fresh, empty test database from the EF model.
@@ -99,6 +112,31 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         return await query(db);
+    }
+}
+
+// Keeps every "sent" email in memory
+public sealed class CapturingEmailSender : IEmailSender
+{
+    private readonly ConcurrentQueue<EmailMessage> _sent = new();
+
+    public Task SendAsync(EmailMessage message, CancellationToken cancellationToken)
+    {
+        _sent.Enqueue(message);
+        return Task.CompletedTask;
+    }
+
+    // Emails are sent by a background worker a moment after the request, so tests wait for them.
+    // Returns what was found when `count` matching emails arrived, or when the timeout ran out.
+    public async Task<List<EmailMessage>> WaitForAsync(Func<EmailMessage, bool> match, int count = 1, TimeSpan? timeout = null)
+    {
+        var deadline = DateTime.UtcNow + (timeout ?? TimeSpan.FromSeconds(5));
+        while (true)
+        {
+            var found = _sent.Where(match).ToList();
+            if (found.Count >= count || DateTime.UtcNow > deadline) return found;
+            await Task.Delay(25);
+        }
     }
 }
 

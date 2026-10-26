@@ -106,11 +106,19 @@ export const getMe = () => request<AuthUser>("/api/auth/me");
 export const updateProfile = (name: string) =>
   request<AuthUser>("/api/auth/profile", { method: "PUT", body: JSON.stringify({ name }) });
 
+// Answers with a NEW login token: changing the password ends every other session
 export const changePassword = (currentPassword: string, newPassword: string) =>
-  request<void>("/api/auth/password", {
+  request<AuthResponse>("/api/auth/password", {
     method: "PUT",
     body: JSON.stringify({ currentPassword, newPassword }),
   });
+
+// "Forgot password": always answers with the same message, whether or not the email has an account
+export const forgotPassword = (email: string) =>
+  request<{ message: string }>("/api/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) });
+
+export const resetPassword = (token: string, newPassword: string) =>
+  request<void>("/api/auth/reset-password", { method: "POST", body: JSON.stringify({ token, newPassword }) });
 
 // ---- My shop page (the seller's own settings) ----
 export const getMyShop = () => request<MyShop>("/api/my-shop");
