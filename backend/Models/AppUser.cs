@@ -26,6 +26,14 @@ public class AppUser
     // so all older tokens (on every other device) stop working at once.
     public int TokenVersion { get; set; }
 
+    // true = do NOT email this user when a visitor writes to them.
+    // (Stored as "mute" on purpose: the default, false, then means "notifications are on",
+    // which is also what every existing account gets when the column is added.)
+    public bool MuteInquiryEmails { get; set; }
+
+    // When the last "you have a new message" email was sent. Used to send at most one every few minutes.
+    public DateTime? LastInquiryEmailAt { get; set; }
+
     // ---- Optional public shop page (the user turns it on themselves) ----
 
     // The name visitors see, for example "Rasel's Gadgets". It is NOT the account name.

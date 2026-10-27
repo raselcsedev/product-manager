@@ -120,6 +120,13 @@ export const forgotPassword = (email: string) =>
 export const resetPassword = (token: string, newPassword: string) =>
   request<void>("/api/auth/reset-password", { method: "POST", body: JSON.stringify({ token, newPassword }) });
 
+// Email me when a visitor sends me a message: on or off
+export const updateNotificationSettings = (notifyOnInquiry: boolean) =>
+  request<AuthUser>("/api/auth/notification-settings", {
+    method: "PUT",
+    body: JSON.stringify({ notifyOnInquiry }),
+  });
+
 // ---- My shop page (the seller's own settings) ----
 export const getMyShop = () => request<MyShop>("/api/my-shop");
 

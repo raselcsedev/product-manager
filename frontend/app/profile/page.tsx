@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Alert from "@/components/Alert";
 import { useAuth } from "@/context/AuthContext";
-import { changePassword, updateProfile } from "@/lib/api";
+import { changePassword, updateNotificationSettings, updateProfile } from "@/lib/api";
 
 type Message = { type: "success" | "error"; text: string } | null;
 
@@ -24,6 +24,16 @@ export default function ProfilePage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState<Message>(null);
+
+  // ---- Notifications ----
+  const [notify, setNotify] = useState(user?.notifyOnInquiry ?? true);
+  const [notifySaving, setNotifySaving] = useState(false);
+  const [notifyMessage, setNotifyMessage] = useState<Message>(null);
+
+  // The saved session may be older than this setting; the app refreshes it from the server a moment after loading.
+  useEffect(() => {
+    if (user?.notifyOnInquiry !== undefined) setNotify(user.notifyOnInquiry);
+  }, [user?.notifyOnInquiry]);
 
   async function handleNameSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -89,6 +99,25 @@ export default function ProfilePage() {
     }
   }
 
+  async function handleNotifyChange(next: boolean) {
+    setNotify(next); // show the change at once
+    setNotifyMessage(null);
+    setNotifySaving(true);
+    try {
+      const updated = await updateNotificationSettings(next);
+      updateUser(updated);
+      setNotifyMessage({
+        type: "success",
+        text: next ? "You will get an email when a visitor writes to you." : "Message emails are turned off.",
+      });
+    } catch (err) {
+      setNotify(!next); // put the switch back
+      setNotifyMessage({ type: "error", text: err instanceof Error ? err.message : "Failed to save your setting." });
+    } finally {
+      setNotifySaving(false);
+    }
+  }
+
   if (!user) return null; // AuthGuard normally guarantees a user
 
   const initials =
@@ -150,6 +179,29 @@ export default function ProfilePage() {
           {nameSaving ? "Saving..." : "Save name"}
         </button>
       </form>
+
+      {/* Notifications */}
+      <section className="space-y-4 rounded-lg border border-slate-200 bg-white p-5">
+        <h2 className="font-medium">Notifications</h2>
+        {notifyMessage && <Alert type={notifyMessage.type} message={notifyMessage.text} />}
+
+        <label className="flex cursor-pointer items-start gap-3 text-sm">
+          <input
+            type="checkbox"
+            checked={notify}
+            disabled={notifySaving}
+            onChange={(e) => handleNotifyChange(e.target.checked)}
+            className="mt-1 h-4 w-4"
+          />
+          <span>
+            <span className="font-medium">Email me when a visitor sends me a message</span>
+            <span className="block text-slate-500">
+              We send at most one email every 10 minutes. It only says that you have new messages and links to your
+              inbox. It never contains what the visitor wrote.
+            </span>
+          </span>
+        </label>
+      </section>
 
       {/* Change password */}
       <form onSubmit={handlePasswordSubmit} noValidate className="space-y-4 rounded-lg border border-slate-200 bg-white p-5">

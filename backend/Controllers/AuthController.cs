@@ -275,6 +275,22 @@ public class AuthController : ControllerBase
         return NoContent();
     }
 
+    // PUT /api/auth/notification-settings   body: { "notifyOnInquiry": false }
+    [Authorize]
+    [HttpPut("notification-settings")]
+    public async Task<ActionResult<UserDto>> UpdateNotificationSettings(NotificationSettingsRequest request)
+    {
+        // The user comes from the token: you can only change your own settings.
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == User.GetUserId());
+        if (user is null)
+            return Unauthorized(new { message = "User no longer exists." });
+
+        user.MuteInquiryEmails = !request.NotifyOnInquiry;
+        await _db.SaveChangesAsync();
+
+        return Ok(ToDto(user));
+    }
+
     // "Your password was changed": if it was NOT you, you find out right away
     private void EnqueuePasswordChangedEmail(AppUser user)
     {
@@ -311,6 +327,7 @@ public class AuthController : ControllerBase
             Email = user.Email,
             Role = user.Role,
             CreatedAt = user.CreatedAt,
+            NotifyOnInquiry = !user.MuteInquiryEmails,
         };
 
     private AuthResponse BuildResponse(AppUser user)

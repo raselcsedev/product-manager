@@ -52,6 +52,9 @@ public class UserDto
     public string Email { get; set; } = string.Empty;
     public string Role { get; set; } = Roles.User;
     public DateTime CreatedAt { get; set; }
+
+    // true = this user is emailed when a visitor sends them a message
+    public bool NotifyOnInquiry { get; set; }
 }
 
 public class AuthResponse
@@ -98,4 +101,10 @@ public class ResetPasswordRequest
     [Required(ErrorMessage = "New password is required.")]
     [StringLength(72, MinimumLength = 8, ErrorMessage = "New password must be between 8 and 72 characters.")]
     public string NewPassword { get; set; } = string.Empty;
+}
+
+// PUT /api/auth/notification-settings
+public class NotificationSettingsRequest
+{
+    public bool NotifyOnInquiry { get; set; }
 }

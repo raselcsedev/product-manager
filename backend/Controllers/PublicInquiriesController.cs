@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using ProductApi.Data;
 using ProductApi.Models;
+using ProductApi.Services;
 
 namespace ProductApi.Controllers;
 
@@ -26,10 +27,17 @@ public class PublicInquiriesController : ControllerBase
     private static readonly Regex LinkPattern = new(@"https?://|www\.", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private readonly AppDbContext _db;
+    private readonly EmailQueue _emails;
+    private readonly IConfiguration _config;
+    private readonly ILogger<PublicInquiriesController> _logger;
 
-    public PublicInquiriesController(AppDbContext db)
+    public PublicInquiriesController(
+        AppDbContext db, EmailQueue emails, IConfiguration config, ILogger<PublicInquiriesController> logger)
     {
         _db = db;
+        _emails = emails;
+        _config = config;
+        _logger = logger;
     }
 
     // POST /api/public/products/5/inquiries
@@ -94,7 +102,57 @@ public class PublicInquiriesController : ControllerBase
         });
         await _db.SaveChangesAsync();
 
+        await NotifySellerAsync(product.OwnerId, product.Name);
+
         return Sent();
+    }
+
+    // Emails the seller that a message arrived. At most one email per few minutes, however many messages come in.
+    //
+    // The email deliberately contains NOTHING the visitor wrote (no name, no email address, no text).
+    // Otherwise the contact form could be used to send any text, such as a phishing message, to sellers,
+    // coming from YOUR mail server. The seller reads the real message in the inbox, after logging in.
+    private async Task NotifySellerAsync(int ownerId, string productName)
+    {
+        try
+        {
+            var minutes = _config.GetValue<int?>("Notifications:MinMinutesBetweenEmails") ?? 10;
+            var now = DateTime.UtcNow;
+            var cutoff = now.AddMinutes(-minutes);
+
+            // "Claim" the right to send in ONE database step. If several messages arrive at the same moment,
+            // only one of them changes a row, so only one email is sent.
+            var claimed = await _db.Users
+                .Where(u => u.Id == ownerId && !u.MuteInquiryEmails &&
+                            (u.LastInquiryEmailAt == null || u.LastInquiryEmailAt < cutoff))
+                .ExecuteUpdateAsync(s => s.SetProperty(u => u.LastInquiryEmailAt, (DateTime?)now));
+
+            if (claimed == 0)
+                return;
+
+            var seller = await _db.Users.AsNoTracking()
+                .Where(u => u.Id == ownerId)
+                .Select(u => new { u.Email, u.Name })
+                .FirstAsync();
+
+            var unread = await _db.Inquiries.CountAsync(i => i.OwnerId == ownerId && !i.IsRead);
+            var siteUrl = (_config["Site:Url"] ?? _config["Cors:AllowedOrigin"] ?? "http://localhost:3000").TrimEnd('/');
+
+            _emails.TryEnqueue(new EmailMessage(
+                seller.Email,
+                "New message in your Product Manager inbox",
+                $"Hello {seller.Name},\n\n" +
+                $"You have {unread} unread message{(unread == 1 ? "" : "s")} in your inbox. " +
+                $"The newest one is about \"{productName}\".\n\n" +
+                $"Read it here: {siteUrl}/inbox\n\n" +
+                $"We send at most one of these emails every {minutes} minutes.\n" +
+                $"You can turn them off on your profile page: {siteUrl}/profile\n"));
+        }
+        catch (Exception ex)
+        {
+            // The message itself is already saved. A problem with the notification must not turn a success into an error.
+            _logger.LogError(ex, "Could not queue the new-message email for seller {OwnerId}.", ownerId);
+        }
     }
 
     // Always the same small answer: it says nothing about the seller.

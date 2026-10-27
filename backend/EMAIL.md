@@ -37,3 +37,14 @@ them to you without delivering them to anyone.
 3. The secret is after the `#`, so browsers never send it to any server. The page reads it and removes it from the address bar.
 4. You choose a new password. The link works once. Your password changes, every login token is revoked
    (everyone, including a thief, is logged out) and a "your password was changed" email is sent.
+
+## Email about new messages
+When a visitor writes to a seller (the contact form on a public product), the seller gets an email,
+unless they switched it off on their Profile page.
+
+- At most **one email every 10 minutes** per seller, however many messages arrive (`Notifications:MinMinutesBetweenEmails`).
+- The subject is fixed text, and the body only says how many unread messages there are, the seller's OWN product name,
+  and a link to the inbox. It never contains anything the visitor typed (name, email address or message).
+  That is deliberate: otherwise the contact form would let strangers send any text, for example a phishing message,
+  to your sellers from your own mail server.
+- The message itself is always stored in the inbox first. A failed email never loses a message.
