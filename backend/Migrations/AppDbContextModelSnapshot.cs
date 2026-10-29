@@ -38,6 +38,12 @@ namespace ProductApi.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)");
 
+                    b.Property<DateTime?>("LastInquiryEmailAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("MuteInquiryEmails")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
