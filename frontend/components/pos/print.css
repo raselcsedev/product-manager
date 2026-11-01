@@ -1,0 +1,36 @@
+/* Printing a receipt: only what is inside ".print-area" is printed. */
+@media print {
+  @page {
+    margin: 6mm;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .print-area,
+  .print-area * {
+    visibility: visible !important;
+  }
+
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm; /* the usual width of a receipt printer; other printers simply print it at this width */
+    max-width: 100%;
+    border: none !important;
+  }
+
+  /* the pop-up around the receipt must not clip it */
+  .print-modal {
+    position: static !important;
+    background: none !important;
+    display: block !important;
+  }
+
+  .print-scroll {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+}
