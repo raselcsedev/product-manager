@@ -23,6 +23,17 @@ const menu = [
       </svg>
     ),
   },
+ {
+    label: "POS",
+    href: "/pos",
+    adminOnly: false,
+    isActive: (p: string) => p === "/pos",
+    icon: (
+      <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M3 3h2l.4 2M7 13h10l3-8H5.4M7 13L5.4 5M7 13l-2 4h13M9 20a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z" />
+      </svg>
+    ),
+  },
   {
     label: "Products",
     href: "/products",
@@ -65,6 +76,17 @@ const menu = [
     icon: (
       <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
         <path d="M3 7l9 6 9-6M3 7v10a1 1 0 001 1h16a1 1 0 001-1V7M3 7a1 1 0 011-1h16a1 1 0 011 1" />
+      </svg>
+    ),
+  },
+    {
+    label: "Sales",
+    href: "/sales",
+    adminOnly: false,
+    isActive: (p: string) => p === "/sales" || /^\/sales\/\d+$/.test(p),
+    icon: (
+      <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M6 2h12v20l-3-2-3 2-3-2-3 2V2zM9 7h6M9 11h6" />
       </svg>
     ),
   },

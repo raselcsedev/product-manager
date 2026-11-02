@@ -85,7 +85,7 @@ async function send(path: string, options?: RequestInit): Promise<Response> {
 }
 
 // Normal JSON request
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
+export async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await send(path, options);
   if (!res.ok) throw new Error(await readError(res));
   if (res.status === 204) return undefined as T;

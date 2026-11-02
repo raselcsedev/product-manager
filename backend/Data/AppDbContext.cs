@@ -42,6 +42,7 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);   // <-- add this line
         // Two accounts cannot share the same email.
         modelBuilder.Entity<AppUser>().HasIndex(u => u.Email).IsUnique();
 
