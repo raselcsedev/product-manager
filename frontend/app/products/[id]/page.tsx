@@ -77,7 +77,7 @@ export default function ProductDetailPage() {
     <div className="mx-auto max-w-4xl space-y-6">
       <Link
         href="/products"
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-blue-600 transition-colors"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
       >
         <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -97,7 +97,7 @@ export default function ProductDetailPage() {
             {!product.imageFileName && (
               <p className="mt-2 text-xs text-slate-400 text-center">
                 No product image uploaded.{" "}
-                <Link href={`/products/edit/${product.id}`} className="text-blue-600 hover:underline">
+                <Link href={`/products/edit/${product.id}`} className="text-emerald-600 hover:underline dark:text-emerald-400">
                   Upload image
                 </Link>
               </p>
@@ -144,7 +144,7 @@ export default function ProductDetailPage() {
             <div className="flex flex-wrap gap-2.5 pt-4 border-t border-slate-100 dark:border-slate-800">
               <Link
                 href={`/products/edit/${product.id}`}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-500/25 hover:bg-blue-700 active:scale-95 transition-all"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-emerald-500/25 hover:bg-emerald-700 active:scale-95 transition-all"
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />

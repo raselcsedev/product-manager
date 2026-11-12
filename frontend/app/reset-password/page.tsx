@@ -6,7 +6,7 @@ import Alert from "@/components/Alert";
 import { resetPassword } from "@/lib/api";
 
 const inputClass =
-  "mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600";
+  "mt-1.5 w-full rounded-xl border border-slate-200/90 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 transition-all";
 
 export default function ResetPasswordPage() {
   const [token, setToken] = useState<string | null>(null);
@@ -18,8 +18,6 @@ export default function ResetPasswordPage() {
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
 
-  // The secret is in the part of the address after "#" (it is never sent to any server).
-  // We read it, and then remove it from the address bar and the browser history.
   useEffect(() => {
     const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
     const found = params.get("token");
@@ -59,15 +57,18 @@ export default function ResetPasswordPage() {
 
   if (done) {
     return (
-      <div className="mx-auto max-w-sm space-y-4">
-        <h1 className="text-2xl font-semibold">Password changed</h1>
-        <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-6">
-          <Alert type="success" message="Your password was changed. You were logged out everywhere. Log in with the new password." />
+      <div className="mx-auto max-w-md space-y-6 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Password Updated</h1>
+          <p className="mt-1 text-sm text-slate-500">Your account credentials have been securely updated.</p>
+        </div>
+        <div className="space-y-4 rounded-2xl border border-slate-200/80 bg-white p-7 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+          <Alert type="success" message="Your password has been changed. All previous sessions have been ended. You can now log in with your new password." />
           <Link
             href="/login"
-            className="inline-block rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white shadow-sm shadow-emerald-500/25 hover:bg-emerald-700 active:scale-95 transition-all"
           >
-            Go to login
+            Continue to Sign In
           </Link>
         </div>
       </div>
@@ -76,62 +77,77 @@ export default function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <div className="mx-auto max-w-sm space-y-4">
-        <h1 className="text-2xl font-semibold">Reset your password</h1>
-        <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-6">
-          <Alert type="error" message="This link is incomplete or has already been used." />
-          <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">
-            Request a new link
-          </Link>
+      <div className="mx-auto max-w-md space-y-6 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Reset Link Expired</h1>
+          <p className="mt-1 text-sm text-slate-500">This password reset link is invalid or has already been used.</p>
+        </div>
+        <div className="space-y-4 rounded-2xl border border-slate-200/80 bg-white p-7 shadow-xs dark:border-slate-800 dark:bg-slate-900 text-center">
+          <Alert type="error" message="Please request a new reset link to proceed." />
+          <div className="pt-2">
+            <Link
+              href="/forgot-password"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 hover:underline dark:text-emerald-400"
+            >
+              Request a new password link →
+            </Link>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-sm space-y-4">
-      <h1 className="text-2xl font-semibold">Choose a new password</h1>
+    <div className="mx-auto max-w-md space-y-6 py-8">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Choose New Password</h1>
+        <p className="mt-1 text-sm text-slate-500">Enter a secure new password for your account.</p>
+      </div>
 
-      <form onSubmit={handleSubmit} noValidate className="space-y-5 rounded-lg border border-slate-200 bg-white p-6">
+      <form onSubmit={handleSubmit} noValidate className="space-y-4 rounded-2xl border border-slate-200/80 bg-white p-7 shadow-xs dark:border-slate-800 dark:bg-slate-900">
         {error && <Alert type="error" message={error} />}
 
         <div>
-          <label htmlFor="password" className="text-sm font-medium">New password</label>
+          <label htmlFor="password" className="block text-xs font-semibold text-slate-600 dark:text-slate-400">New Password</label>
           <input
             id="password"
             type="password"
             autoComplete="new-password"
+            placeholder="••••••••"
             className={inputClass}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <p className="mt-1 text-xs text-slate-500">8 to 72 characters.</p>
+          <p className="mt-1 text-[11px] text-slate-400">8 to 72 characters.</p>
         </div>
 
         <div>
-          <label htmlFor="confirm" className="text-sm font-medium">Confirm new password</label>
+          <label htmlFor="confirm" className="block text-xs font-semibold text-slate-600 dark:text-slate-400">Confirm New Password</label>
           <input
             id="confirm"
             type="password"
             autoComplete="new-password"
+            placeholder="••••••••"
             className={inputClass}
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={saving}
-          className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-        >
-          {saving ? "Saving..." : "Change password"}
-        </button>
+        <div className="pt-2">
+          <button
+            type="submit"
+            disabled={saving}
+            className="w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white shadow-sm shadow-emerald-500/25 hover:bg-emerald-700 active:scale-[0.98] transition-all disabled:opacity-60"
+          >
+            {saving ? "Saving new password..." : "Reset Password"}
+          </button>
+        </div>
 
         {error?.includes("not valid any more") && (
-          <p className="text-center text-sm">
-            <Link href="/forgot-password" className="text-blue-600 hover:underline">
-              Request a new link
+          <p className="text-center text-xs text-slate-500 dark:text-slate-400 pt-2">
+            <Link href="/forgot-password" className="font-semibold text-emerald-600 hover:underline dark:text-emerald-400">
+              Request a new password reset link
             </Link>
           </p>
         )}

@@ -166,11 +166,11 @@ function PublicShell({ children }: { children: React.ReactNode }) {
   const { user, ready } = useAuth();
 
   return (
-    <div className="min-h-screen bg-slate-50/60 dark:bg-slate-950/40">
-      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 backdrop-blur dark:border-slate-800">
-        <div className="mx-auto flex h-16 w-full max-w-[1700px] items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link href="/shop" className="flex items-center gap-2.5 font-bold tracking-tight text-slate-900 hover:text-blue-600 transition-colors">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm shadow-blue-500/25">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
+        <div className="mx-auto flex h-16 w-full max-w-[1720px] items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link href="/shop" className="flex items-center gap-2.5 font-bold tracking-tight text-slate-900 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm shadow-emerald-500/25">
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
@@ -178,29 +178,29 @@ function PublicShell({ children }: { children: React.ReactNode }) {
             <span className="text-lg">Product Manager</span>
           </Link>
           <nav className="flex items-center gap-1.5 sm:gap-2">
-            <Link href="/shop" className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors">
+            <Link href="/shop" className="rounded-xl px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
               Shop
             </Link>
-            <Link href="/shops" className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors">
+            <Link href="/shops" className="rounded-xl px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
               Shops
             </Link>
             <ThemeToggle />
             {ready && user ? (
               <Link
                 href="/"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-1.5 text-sm font-semibold text-white shadow-sm shadow-emerald-500/25 hover:bg-emerald-700 transition-colors"
               >
                 Dashboard
               </Link>
             ) : (
               ready && (
                 <>
-                  <Link href="/login" className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors">
+                  <Link href="/login" className="rounded-xl px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
                     Login
                   </Link>
                   <Link
                     href="/register"
-                    className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors"
+                    className="inline-flex items-center rounded-xl bg-emerald-600 px-4 py-1.5 text-sm font-semibold text-white shadow-sm shadow-emerald-500/25 hover:bg-emerald-700 transition-colors"
                   >
                     Register
                   </Link>
@@ -210,7 +210,7 @@ function PublicShell({ children }: { children: React.ReactNode }) {
           </nav>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-[1700px] p-4 sm:p-6 lg:p-8">{children}</main>
+      <main className="mx-auto w-full max-w-[1720px] p-4 sm:p-6 lg:p-8">{children}</main>
     </div>
   );
 }
@@ -279,24 +279,24 @@ function PrivateShell({ pathname, children }: { pathname: string; children: Reac
     pathname === "/profile" ? "Profile" : menu.find((m) => m.isActive(pathname))?.label ?? "";
 
   return (
-    <div className="flex min-h-screen bg-slate-50/60 dark:bg-slate-950/40">
+    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Mobile overlay */}
       {open && (
         <div
-          className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm transition-opacity md:hidden"
+          className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm transition-opacity md:hidden"
           onClick={() => setOpen(false)}
         />
       )}
 
       {/* Mobile Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-slate-200/80 bg-white shadow-2xl transition-transform duration-300 md:hidden dark:border-slate-800 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-slate-200/80 bg-white shadow-2xl transition-transform duration-300 md:hidden dark:border-slate-800 dark:bg-slate-900 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex h-16 items-center justify-between border-b border-slate-200/80 px-5 dark:border-slate-800">
-          <Link href="/" className="flex items-center gap-2.5 font-bold tracking-tight text-slate-900">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm shadow-blue-500/25">
+          <Link href="/" className="flex items-center gap-2.5 font-bold tracking-tight text-slate-900 dark:text-white">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm shadow-emerald-500/25">
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
@@ -306,7 +306,7 @@ function PrivateShell({ pathname, children }: { pathname: string; children: Reac
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"
             aria-label="Close menu"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -325,8 +325,8 @@ function PrivateShell({ pathname, children }: { pathname: string; children: Reac
                 aria-current={active ? "page" : undefined}
                 className={`flex items-center gap-3.5 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors ${
                   active
-                    ? "bg-blue-600 text-white shadow-sm shadow-blue-500/20"
-                    : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 dark:hover:bg-slate-800"
+                    ? "bg-emerald-600 text-white shadow-sm shadow-emerald-500/20"
+                    : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                 }`}
               >
                 {item.icon}
@@ -335,7 +335,7 @@ function PrivateShell({ pathname, children }: { pathname: string; children: Reac
                   <span
                     aria-label={`${unread} unread message${unread === 1 ? "" : "s"}`}
                     className={`ml-auto rounded-full px-2 py-0.5 text-xs font-semibold ${
-                      active ? "bg-white text-blue-600" : "bg-blue-600 text-white"
+                      active ? "bg-white text-emerald-700" : "bg-emerald-600 text-white"
                     }`}
                   >
                     {unread > 99 ? "99+" : unread}
@@ -349,7 +349,7 @@ function PrivateShell({ pathname, children }: { pathname: string; children: Reac
 
       {/* Desktop Sidebar (Expandable / Collapsible) */}
       <aside
-        className={`hidden md:sticky md:top-0 md:flex md:h-screen md:flex-col md:border-r md:border-slate-200/80 md:bg-white md:shadow-[1px_0_3px_rgba(0,0,0,0.03)] dark:md:border-slate-800 transition-all duration-300 ease-in-out shrink-0 ${
+        className={`hidden md:sticky md:top-0 md:flex md:h-screen md:flex-col md:border-r md:border-slate-200/80 md:bg-white md:shadow-[1px_0_3px_rgba(0,0,0,0.03)] dark:md:border-slate-800 dark:md:bg-slate-900 transition-all duration-300 ease-in-out shrink-0 ${
           collapsed ? "md:w-20" : "md:w-64"
         }`}
       >
@@ -361,16 +361,16 @@ function PrivateShell({ pathname, children }: { pathname: string; children: Reac
         >
           <Link
             href="/"
-            className="flex items-center gap-3 font-bold tracking-tight text-slate-900 group"
+            className="flex items-center gap-3 font-bold tracking-tight text-slate-900 dark:text-white group"
             title="Product Manager"
           >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm shadow-blue-500/25 group-hover:scale-105 transition-transform">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm shadow-emerald-500/25 group-hover:scale-105 transition-transform">
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
             </span>
             {!collapsed && (
-              <span className="whitespace-nowrap text-base font-bold text-slate-900 tracking-tight">
+              <span className="whitespace-nowrap text-base font-bold text-slate-900 dark:text-white tracking-tight">
                 Product Manager
               </span>
             )}
@@ -380,7 +380,7 @@ function PrivateShell({ pathname, children }: { pathname: string; children: Reac
             <button
               type="button"
               onClick={toggleSidebar}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 transition-colors"
+              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300 transition-colors"
               title="Collapse sidebar"
               aria-label="Collapse sidebar"
             >
@@ -407,8 +407,8 @@ function PrivateShell({ pathname, children }: { pathname: string; children: Reac
                       : "gap-3.5 px-3.5 py-2.5"
                   } ${
                     active
-                      ? "bg-blue-600 text-white shadow-sm shadow-blue-500/25"
-                      : "text-slate-600 hover:bg-slate-100/90 hover:text-slate-900 dark:hover:bg-slate-800"
+                      ? "bg-emerald-600 text-white shadow-sm shadow-emerald-500/25"
+                      : "text-slate-600 hover:bg-slate-100/90 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                   }`}
                 >
                   {item.icon}
@@ -417,14 +417,14 @@ function PrivateShell({ pathname, children }: { pathname: string; children: Reac
                   {/* Badge */}
                   {item.href === "/inbox" && unread > 0 && (
                     collapsed ? (
-                      <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-bold text-white shadow-md ring-2 ring-white">
+                      <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1 text-[10px] font-bold text-white shadow-md ring-2 ring-white dark:ring-slate-900">
                         {unread > 9 ? "9+" : unread}
                       </span>
                     ) : (
                       <span
                         aria-label={`${unread} unread message${unread === 1 ? "" : "s"}`}
                         className={`ml-auto rounded-full px-2 py-0.5 text-xs font-semibold ${
-                          active ? "bg-white text-blue-600" : "bg-blue-600 text-white"
+                          active ? "bg-white text-emerald-700" : "bg-emerald-600 text-white"
                         }`}
                       >
                         {unread > 99 ? "99+" : unread}
@@ -435,7 +435,7 @@ function PrivateShell({ pathname, children }: { pathname: string; children: Reac
 
                 {/* Floating tooltip when sidebar is collapsed */}
                 {collapsed && (
-                  <div className="pointer-events-none absolute left-full top-1/2 z-50 ml-3 -translate-y-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-medium text-white shadow-lg opacity-0 transition-opacity group-hover:opacity-100 dark:bg-slate-800">
+                  <div className="pointer-events-none absolute left-full top-1/2 z-50 ml-3 -translate-y-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1 text-xs font-medium text-white shadow-lg opacity-0 transition-opacity group-hover:opacity-100 dark:bg-slate-800 border border-slate-700">
                     {item.label}
                     {item.href === "/inbox" && unread > 0 && ` (${unread})`}
                   </div>
@@ -451,7 +451,7 @@ function PrivateShell({ pathname, children }: { pathname: string; children: Reac
             <button
               type="button"
               onClick={toggleSidebar}
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 transition-colors"
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
               title="Expand sidebar"
               aria-label="Expand sidebar"
             >
@@ -466,14 +466,14 @@ function PrivateShell({ pathname, children }: { pathname: string; children: Reac
       {/* Main Content Area (Full Width Layout) */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Top Header */}
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200/80 bg-white/95 backdrop-blur px-4 sm:px-6 lg:px-8 dark:border-slate-800">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200/80 bg-white/95 backdrop-blur px-4 sm:px-6 lg:px-8 dark:border-slate-800 dark:bg-slate-900/95">
           <div className="flex items-center gap-3">
             {/* Mobile hamburger */}
             <button
               type="button"
               aria-label="Open menu"
               onClick={() => setOpen(true)}
-              className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 md:hidden"
+              className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 md:hidden"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
@@ -484,7 +484,7 @@ function PrivateShell({ pathname, children }: { pathname: string; children: Reac
             <button
               type="button"
               onClick={toggleSidebar}
-              className="hidden md:inline-flex items-center justify-center rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 transition-colors"
+              className="hidden md:inline-flex items-center justify-center rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
               title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             >

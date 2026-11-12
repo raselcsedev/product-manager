@@ -11,7 +11,7 @@ interface ProductCardProps {
 
 export default function ProductCard({ product: p, onDelete }: ProductCardProps) {
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs hover:shadow-xl hover:border-blue-400/60 transition-all duration-300 dark:border-slate-800 dark:bg-slate-900">
+    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs hover:shadow-xl hover:border-emerald-400/50 transition-all duration-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-600/40">
       {/* Product Image & Badges Header */}
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
         <Link href={`/products/${p.id}`} aria-label={`View ${p.name}`} className="block h-full w-full">
@@ -51,7 +51,7 @@ export default function ProductCard({ product: p, onDelete }: ProductCardProps) 
         {/* Name */}
         <Link
           href={`/products/${p.id}`}
-          className="line-clamp-1 text-base font-semibold text-slate-900 hover:text-blue-600 transition-colors dark:text-slate-100"
+          className="line-clamp-1 text-base font-semibold text-slate-900 hover:text-emerald-600 transition-colors dark:text-slate-100 dark:hover:text-emerald-400"
           title={p.name}
         >
           {p.name}
@@ -82,7 +82,7 @@ export default function ProductCard({ product: p, onDelete }: ProductCardProps) 
         <div className="mt-4 flex items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
           <Link
             href={`/products/${p.id}`}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition-colors dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:text-emerald-400"
           >
             <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -92,7 +92,7 @@ export default function ProductCard({ product: p, onDelete }: ProductCardProps) 
           </Link>
           <Link
             href={`/products/edit/${p.id}`}
-            className="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 transition-colors dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+            className="inline-flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 transition-colors dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-400"
             title="Edit product"
           >
             <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -103,7 +103,7 @@ export default function ProductCard({ product: p, onDelete }: ProductCardProps) 
           <button
             type="button"
             onClick={() => onDelete(p)}
-            className="inline-flex items-center justify-center rounded-lg border border-red-200 bg-white p-1.5 text-red-600 hover:bg-red-50 hover:border-red-300 transition-colors dark:border-red-900/60 dark:bg-slate-800 dark:hover:bg-red-950/40"
+            className="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-white p-1.5 text-rose-600 hover:bg-rose-50 hover:border-rose-300 transition-colors dark:border-rose-900/60 dark:bg-slate-800 dark:hover:bg-rose-950/40 dark:text-rose-400"
             title="Delete product"
             aria-label={`Delete ${p.name}`}
           >

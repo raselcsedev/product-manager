@@ -3,7 +3,7 @@ export default function PublicPill() {
   return (
     <span
       title="Visible on the public shop"
-      className="inline-flex items-center gap-1 rounded-full border border-blue-200/90 bg-blue-50/90 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-300"
+      className="inline-flex items-center gap-1 rounded-full border border-teal-200/90 bg-teal-50/90 px-2 py-0.5 text-xs font-semibold text-teal-700 dark:border-teal-800 dark:bg-teal-950/50 dark:text-teal-300"
     >
       <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <circle cx="12" cy="12" r="10" />

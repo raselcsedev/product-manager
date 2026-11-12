@@ -31,7 +31,7 @@ export default function ThemeToggle() {
       onClick={toggle}
       aria-label={label}
       title={label}
-      className="rounded-md p-2 text-slate-600 hover:bg-slate-100"
+      className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
     >
       {mounted && dark ? (
         // sun

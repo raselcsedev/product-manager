@@ -8,7 +8,7 @@ const money = (n: number) =>
 
 export default function PublicProductCard({ product: p }: { product: PublicProduct }) {
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs hover:shadow-xl hover:border-blue-400/60 transition-all duration-300 dark:border-slate-800 dark:bg-slate-900">
+    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs hover:shadow-xl hover:border-emerald-400/60 transition-all duration-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-500/50">
       {/* Product Image */}
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
         <Link href={`/shop/${p.id}`} aria-label={`View ${p.name}`} className="block h-full w-full">
@@ -39,7 +39,7 @@ export default function PublicProductCard({ product: p }: { product: PublicProdu
           {p.shopSlug && p.shopName && (
             <span className="truncate pl-2">
               by{" "}
-              <Link href={`/shops/${p.shopSlug}`} className="font-semibold text-slate-600 hover:text-blue-600 transition-colors dark:text-slate-300">
+              <Link href={`/shops/${p.shopSlug}`} className="font-semibold text-slate-600 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors dark:text-slate-300">
                 {p.shopName}
               </Link>
             </span>
@@ -49,7 +49,7 @@ export default function PublicProductCard({ product: p }: { product: PublicProdu
         {/* Product Name */}
         <Link
           href={`/shop/${p.id}`}
-          className="line-clamp-1 text-base font-semibold text-slate-900 hover:text-blue-600 transition-colors dark:text-slate-100"
+          className="line-clamp-1 text-base font-semibold text-slate-900 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors dark:text-slate-100"
           title={p.name}
         >
           {p.name}
@@ -70,7 +70,7 @@ export default function PublicProductCard({ product: p }: { product: PublicProdu
           </div>
           <Link
             href={`/shop/${p.id}`}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-blue-700 active:scale-95 transition-all"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs shadow-emerald-500/20 hover:bg-emerald-700 active:scale-95 transition-all"
           >
             Details
             <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

@@ -10,8 +10,6 @@ export const metadata: Metadata = {
   alternates: { canonical: "/shop" },
 };
 
-// A server component: the first page of products is fetched here, so it is already in the HTML
-// that search engines and link previews read.
 export default async function ShopPage() {
   const [initialResult, initialCategories] = await Promise.all([
     getProductsServer(`pageSize=${SHOP_PAGE_SIZE}`),
@@ -19,14 +17,17 @@ export default async function ShopPage() {
   ]);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-2">
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Shop</h1>
-          <p className="text-sm text-slate-500">Browse products published by our sellers. No account needed.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Public Marketplace</h1>
+          <p className="mt-1 text-sm text-slate-500">Discover and browse quality products published by independent sellers.</p>
         </div>
-        <Link href="/shops" className="text-sm text-blue-600 hover:underline">
-          Browse by shop
+        <Link
+          href="/shops"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 transition-colors"
+        >
+          Browse by storefront →
         </Link>
       </div>
 

@@ -112,7 +112,7 @@ export default function CategoriesPage() {
   }
 
   const inputClass =
-    "w-full rounded-xl border border-slate-200/90 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 transition-all";
+    "w-full rounded-xl border border-slate-200/90 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 transition-all";
 
   const totalProducts = categories.reduce((sum, c) => sum + (c.productCount || 0), 0);
 
@@ -131,7 +131,7 @@ export default function CategoriesPage() {
           </div>
           <div className="rounded-xl border border-slate-200/80 bg-white px-3.5 py-1.5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
             <span className="text-xs text-slate-400">Assigned Products: </span>
-            <span className="font-bold text-blue-600 dark:text-blue-400">{totalProducts}</span>
+            <span className="font-bold text-emerald-600 dark:text-emerald-400">{totalProducts}</span>
           </div>
         </div>
       </div>
@@ -148,7 +148,7 @@ export default function CategoriesPage() {
             className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900"
           >
             <div className="flex items-center gap-2.5 pb-4 border-b border-slate-100 dark:border-slate-800">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400">
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
@@ -174,7 +174,7 @@ export default function CategoriesPage() {
               <button
                 type="submit"
                 disabled={adding || !newName.trim()}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-500/25 hover:bg-blue-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white shadow-sm shadow-emerald-500/25 hover:bg-emerald-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {adding ? (
                   "Adding category..."
@@ -249,7 +249,7 @@ export default function CategoriesPage() {
                         )}
                       </td>
                       <td className="px-5 py-4 text-center">
-                        <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
+                        <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
                           {c.productCount} {c.productCount === 1 ? "product" : "products"}
                         </span>
                       </td>
@@ -260,7 +260,7 @@ export default function CategoriesPage() {
                               <button
                                 onClick={() => handleSave(c)}
                                 disabled={saving}
-                                className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-blue-700 disabled:opacity-60"
+                                className="inline-flex items-center rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-emerald-700 disabled:opacity-60"
                               >
                                 Save
                               </button>
@@ -275,7 +275,7 @@ export default function CategoriesPage() {
                             <>
                               <button
                                 onClick={() => startEdit(c)}
-                                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition-colors dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                               >
                                 <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />

@@ -153,7 +153,7 @@ export default function ProductForm({ initialValues, submitLabel, onSubmit }: Pr
   }
 
   const inputClass =
-    "mt-1 w-full rounded-xl border border-slate-200/90 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 transition-all";
+    "mt-1 w-full rounded-xl border border-slate-200/90 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 transition-all";
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-6 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
@@ -195,7 +195,7 @@ export default function ProductForm({ initialValues, submitLabel, onSubmit }: Pr
           categories.length === 0 && (
             <p className="mt-1 text-sm text-slate-500">
               No categories yet.{" "}
-              <Link href="/categories" className="text-blue-600 hover:underline">Create one</Link>
+              <Link href="/categories" className="text-emerald-600 hover:underline dark:text-emerald-400">Create one</Link>
             </p>
           )
         )}
@@ -277,7 +277,7 @@ export default function ProductForm({ initialValues, submitLabel, onSubmit }: Pr
             type="checkbox"
             checked={isPublished}
             onChange={(e) => setIsPublished(e.target.checked)}
-            className="mt-1 h-4 w-4 rounded text-blue-600 focus:ring-blue-500"
+            className="mt-1 h-4 w-4 rounded text-emerald-600 focus:ring-emerald-500"
           />
           <span>
             <span className="font-semibold text-slate-900 dark:text-slate-100">Show on the public shop</span>
@@ -293,7 +293,7 @@ export default function ProductForm({ initialValues, submitLabel, onSubmit }: Pr
         <button
           type="submit"
           disabled={submitting}
-          className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-500/25 hover:bg-blue-700 active:scale-[0.98] transition-all disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm shadow-emerald-500/25 hover:bg-emerald-700 active:scale-[0.98] transition-all disabled:opacity-60"
         >
           {submitting ? "Saving product..." : submitLabel}
         </button>

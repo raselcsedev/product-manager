@@ -26,7 +26,7 @@ export default function InboxPage() {
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
-    let cancelled = false; // ignore answers from outdated requests
+    let cancelled = false;
 
     async function load() {
       setLoading(true);
@@ -34,7 +34,6 @@ export default function InboxPage() {
         const res = await getInquiries({ unread: unreadOnly, page, pageSize: PAGE_SIZE });
         if (cancelled) return;
         setResult(res);
-        // Deleted the last message on the last page? Step back one page.
         if (res.items.length === 0 && res.page > 1) setPage(Math.max(1, res.totalPages));
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load your messages.");
@@ -101,106 +100,141 @@ export default function InboxPage() {
   const totalPages = result?.totalPages ?? 0;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Inbox</h1>
-          <p className="text-sm text-slate-500">Messages visitors sent you from your public products.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Customer Inquiries</h1>
+          <p className="mt-1 text-sm text-slate-500">Messages and inquiries sent by visitors from your public storefront.</p>
         </div>
-        <button
-          type="button"
-          onClick={handleMarkAllRead}
-          className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-100"
-        >
-          Mark all as read
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleMarkAllRead}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200/80 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 transition-all"
+          >
+            <svg className="h-4 w-4 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            Mark all as read
+          </button>
+        </div>
       </div>
 
-      {/* Filter */}
-      <div role="group" aria-label="Filter messages" className="inline-flex overflow-hidden rounded-md border border-slate-300">
-        {[
-          { label: "All", value: false },
-          { label: "Unread", value: true },
-        ].map((option, index) => (
-          <button
-            key={option.label}
-            type="button"
-            aria-pressed={unreadOnly === option.value}
-            onClick={() => {
-              setUnreadOnly(option.value);
-              setPage(1);
-            }}
-            className={`px-4 py-2 text-sm font-medium ${index > 0 ? "border-l border-slate-300" : ""} ${
-              unreadOnly === option.value ? "bg-blue-600 text-white" : "bg-white hover:bg-slate-100"
-            }`}
-          >
-            {option.label}
-          </button>
-        ))}
+      {/* Filter Toolbar */}
+      <div className="flex items-center justify-between gap-4">
+        <div role="group" aria-label="Filter messages" className="inline-flex p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700">
+          {[
+            { label: "All Messages", value: false },
+            { label: "Unread Only", value: true },
+          ].map((option) => (
+            <button
+              key={option.label}
+              type="button"
+              aria-pressed={unreadOnly === option.value}
+              onClick={() => {
+                setUnreadOnly(option.value);
+                setPage(1);
+              }}
+              className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition-all ${
+                unreadOnly === option.value
+                  ? "bg-white text-emerald-700 shadow-xs dark:bg-slate-900 dark:text-emerald-400"
+                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+
+        {result && (
+          <span className="text-xs font-medium text-slate-500">
+            Total: {result.totalCount} message{result.totalCount === 1 ? "" : "s"}
+          </span>
+        )}
       </div>
 
       {success && <Alert type="success" message={success} />}
       {error && <Alert type="error" message={error} />}
 
       {loading && !result ? (
-        <Spinner label="Loading your messages..." />
+        <Spinner label="Loading customer messages..." />
       ) : result && result.totalCount === 0 && !error ? (
-        <div className="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center text-slate-600">
+        <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-12 text-center text-slate-500">
           {unreadOnly
-            ? "No unread messages."
-            : "No messages yet. When a visitor writes to you from one of your public products, it shows up here."}
+            ? "No unread messages found."
+            : "No inquiries yet. When a visitor writes to you from one of your public products, it will appear here."}
         </div>
       ) : (
         items.length > 0 && (
-          <ul className={`space-y-3 ${loading ? "opacity-60" : ""}`}>
+          <div className="space-y-4">
             {items.map((inquiry) => (
-              <li
+              <article
                 key={inquiry.id}
-                className={`rounded-lg border bg-white p-4 ${inquiry.isRead ? "border-slate-200" : "border-blue-300"}`}
+                className={`rounded-2xl border bg-white p-6 shadow-xs transition-all dark:bg-slate-900 ${
+                  inquiry.isRead
+                    ? "border-slate-200/80 dark:border-slate-800"
+                    : "border-emerald-500/50 ring-1 ring-emerald-500/20 dark:border-emerald-500/40"
+                }`}
               >
-                <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium">{inquiry.senderName}</span>
+                    <div className="flex items-center gap-2.5">
+                      <h3 className="font-bold text-slate-900 dark:text-white text-base">
+                        {inquiry.senderName}
+                      </h3>
                       {!inquiry.isRead && (
-                        <span className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-800">
+                        <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800">
                           New
                         </span>
                       )}
+                    </div>
+                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 font-mono">
+                      {inquiry.senderEmail}
                     </p>
-                    <p className="break-all text-sm text-slate-500">{inquiry.senderEmail}</p>
                   </div>
-                  <time dateTime={inquiry.createdAt} title={formatFull(inquiry.createdAt)} className="shrink-0 text-xs text-slate-500">
+                  <time dateTime={inquiry.createdAt} title={formatFull(inquiry.createdAt)} className="text-xs font-medium text-slate-400 dark:text-slate-500">
                     {timeAgo(inquiry.createdAt)}
                   </time>
                 </div>
 
-                <p className="mt-2 text-xs text-slate-500">
-                  About:{" "}
+                <div className="mt-3 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                  <span className="font-medium">Product inquiry:</span>
                   {inquiry.productId ? (
-                    <Link href={`/products/${inquiry.productId}`} className="font-medium text-blue-600 hover:underline">
-                      {inquiry.productName}
+                    <Link
+                      href={`/products/${inquiry.productId}`}
+                      className="font-semibold text-emerald-600 hover:underline dark:text-emerald-400"
+                    >
+                      {inquiry.productName} →
                     </Link>
                   ) : (
-                    <span>{inquiry.productName} (product deleted)</span>
+                    <span>{inquiry.productName} (Archived / Deleted)</span>
                   )}
-                </p>
+                </div>
 
-                {/* Shown as plain text: anything a visitor typed, even HTML, can never run on this page */}
-                <p className="mt-3 whitespace-pre-line break-words text-sm">{inquiry.message}</p>
+                {/* Message body */}
+                <div className="mt-3 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 p-4 border border-slate-100 dark:border-slate-800">
+                  <p className="whitespace-pre-line break-words text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
+                    {inquiry.message}
+                  </p>
+                </div>
 
-                <div className="mt-4 flex flex-wrap gap-2 text-sm">
+                {/* Actions */}
+                <div className="mt-4 flex flex-wrap items-center gap-2.5">
                   <a
                     href={`mailto:${inquiry.senderEmail}?subject=${encodeURIComponent(`Re: ${inquiry.productName}`)}`}
-                    className="rounded-md bg-blue-600 px-3 py-1 font-medium text-white hover:bg-blue-700"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm shadow-emerald-500/25 hover:bg-emerald-700 transition-colors"
                   >
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
                     Reply by email
                   </a>
                   <button
                     type="button"
                     onClick={() => handleToggleRead(inquiry)}
                     disabled={busyId === inquiry.id}
-                    className="rounded-md border border-slate-300 px-3 py-1 hover:bg-slate-100 disabled:opacity-50"
+                    className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 transition-colors disabled:opacity-50"
                   >
                     {inquiry.isRead ? "Mark as unread" : "Mark as read"}
                   </button>
@@ -208,38 +242,38 @@ export default function InboxPage() {
                     type="button"
                     onClick={() => handleDelete(inquiry)}
                     disabled={busyId === inquiry.id}
-                    className="rounded-md border border-red-200 px-3 py-1 text-red-700 hover:bg-red-50 disabled:opacity-50"
+                    className="rounded-xl border border-rose-200 bg-white px-3.5 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 dark:border-rose-900/60 dark:bg-slate-800 dark:text-rose-400 dark:hover:bg-rose-950/40 transition-colors disabled:opacity-50"
                   >
                     Delete
                   </button>
                 </div>
-              </li>
+              </article>
             ))}
-          </ul>
+          </div>
         )
       )}
 
       {/* Pagination */}
       {result && result.totalCount > 0 && (
-        <div className="flex items-center justify-between text-sm text-slate-600">
+        <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-400">
           <p>
-            {result.totalCount} message{result.totalCount === 1 ? "" : "s"}
+            Showing {items.length} of {result.totalCount} message{result.totalCount === 1 ? "" : "s"}
           </p>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="rounded-md border border-slate-300 px-3 py-1 hover:bg-slate-100 disabled:opacity-40"
+              className="rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 transition-colors disabled:opacity-40"
             >
               Previous
             </button>
-            <span>
+            <span className="text-xs px-2 font-medium">
               Page {result.page} of {totalPages}
             </span>
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
-              className="rounded-md border border-slate-300 px-3 py-1 hover:bg-slate-100 disabled:opacity-40"
+              className="rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 transition-colors disabled:opacity-40"
             >
               Next
             </button>

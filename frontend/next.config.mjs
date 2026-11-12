@@ -48,6 +48,11 @@ const nextConfig = {
 
   poweredByHeader: false, // do not announce "X-Powered-By: Next.js"
 
+  experimental: {
+    workerThreads: false,
+    cpus: 1,
+  },
+
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

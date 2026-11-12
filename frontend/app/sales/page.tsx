@@ -13,7 +13,7 @@ import { PagedResult } from "@/types/product";
 const PAGE_SIZE = 20;
 
 const selectClass =
-  "w-full rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-sm text-slate-800 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 transition-all";
+  "w-full rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-sm text-slate-800 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 transition-all";
 
 function StatCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
@@ -76,7 +76,7 @@ export default function SalesPage() {
         </div>
         <Link
           href="/pos"
-          className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-blue-500/25 hover:bg-blue-700 active:scale-[0.98] transition-all"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-emerald-500/25 hover:bg-emerald-700 active:scale-[0.98] transition-all"
         >
           <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -174,7 +174,7 @@ export default function SalesPage() {
           <p className="mt-1 text-xs text-slate-400">
             Process orders via POS to view receipts and financial records here.
           </p>
-          <Link href="/pos" className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:underline">
+          <Link href="/pos" className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600 hover:underline">
             Open Point of Sale →
           </Link>
         </div>
@@ -196,7 +196,7 @@ export default function SalesPage() {
                 {items.map((sale) => (
                   <tr key={sale.id} className="hover:bg-slate-50/70 transition-colors dark:hover:bg-slate-800/50">
                     <td className="px-5 py-4">
-                      <Link href={`/sales/${sale.id}`} className="font-mono text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline dark:text-blue-400">
+                      <Link href={`/sales/${sale.id}`} className="font-mono text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline dark:text-emerald-400">
                         {sale.receiptNumber}
                       </Link>
                     </td>

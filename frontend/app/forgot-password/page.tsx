@@ -32,52 +32,61 @@ export default function ForgotPasswordPage() {
   }
 
   const inputClass =
-    "mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600";
+    "mt-1.5 w-full rounded-xl border border-slate-200/90 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 transition-all";
 
   return (
-    <div className="mx-auto max-w-sm space-y-4">
-      <h1 className="text-2xl font-semibold">Forgot your password?</h1>
+    <div className="mx-auto max-w-md space-y-6 py-8">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Reset Password</h1>
+        <p className="mt-1 text-sm text-slate-500">We will send a secure password reset link to your email.</p>
+      </div>
 
       {done ? (
-        <div className="space-y-4 rounded-lg border border-slate-200 bg-white p-6">
+        <div className="space-y-4 rounded-2xl border border-slate-200/80 bg-white p-7 shadow-xs dark:border-slate-800 dark:bg-slate-900">
           <Alert type="success" message={done} />
-          <p className="text-sm text-slate-600">
-            The email can take a few minutes. Check your spam folder too. The link works for one hour.
+          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+            The email can take a few minutes. Check your spam folder too. The link remains valid for one hour.
           </p>
-          <Link href="/login" className="text-sm text-blue-600 hover:underline">
-            Back to login
-          </Link>
+          <div className="pt-2">
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 hover:underline dark:text-emerald-400"
+            >
+              ← Back to sign in
+            </Link>
+          </div>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} noValidate className="space-y-5 rounded-lg border border-slate-200 bg-white p-6">
-          <p className="text-sm text-slate-600">
-            Enter your email address and we will send you a link to choose a new password.
-          </p>
+        <form onSubmit={handleSubmit} noValidate className="space-y-4 rounded-2xl border border-slate-200/80 bg-white p-7 shadow-xs dark:border-slate-800 dark:bg-slate-900">
           {error && <Alert type="error" message={error} />}
 
           <div>
-            <label htmlFor="email" className="text-sm font-medium">Email</label>
+            <label htmlFor="email" className="block text-xs font-semibold text-slate-600 dark:text-slate-400">Account Email</label>
             <input
               id="email"
               type="email"
               autoComplete="email"
+              placeholder="you@domain.com"
               className={inputClass}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={sending}
-            className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-          >
-            {sending ? "Sending..." : "Send reset link"}
-          </button>
+          <div className="pt-1">
+            <button
+              type="submit"
+              disabled={sending}
+              className="w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white shadow-sm shadow-emerald-500/25 hover:bg-emerald-700 active:scale-[0.98] transition-all disabled:opacity-60"
+            >
+              {sending ? "Sending reset link..." : "Send Reset Link"}
+            </button>
+          </div>
 
-          <p className="text-center text-sm">
-            <Link href="/login" className="text-blue-600 hover:underline">
-              Back to login
+          <p className="text-center text-xs text-slate-500 dark:text-slate-400 pt-2">
+            Remember your credentials?{" "}
+            <Link href="/login" className="font-semibold text-emerald-600 hover:underline dark:text-emerald-400">
+              Sign in
             </Link>
           </p>
         </form>

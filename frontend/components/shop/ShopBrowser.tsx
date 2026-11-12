@@ -18,7 +18,7 @@ const sortOptions: { value: PublicSort; label: string }[] = [
 ];
 
 const inputClass =
-  "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600";
+  "w-full rounded-xl border border-slate-200/90 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 transition-all";
 
 interface ShopBrowserProps {
   shop?: string; // a seller's shop address; leave out for the main shop
@@ -114,7 +114,7 @@ export default function ShopBrowser({ shop, initialResult, initialCategories }: 
   return (
     <div className="space-y-5">
       {/* Filters */}
-      <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-3">
+      <div className="grid gap-3 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 sm:grid-cols-3">
         <div>
           <label htmlFor="shopSearch" className="text-xs font-medium text-slate-600">Search</label>
           <input
@@ -173,11 +173,11 @@ export default function ShopBrowser({ shop, initialResult, initialCategories }: 
       {loading && !result ? (
         <Spinner label="Loading products..." />
       ) : result && result.totalCount === 0 && !error ? (
-        <div className="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center text-slate-600">
+        <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-12 text-center text-slate-500">
           {hasFilters ? (
             <>
               <p>No products match your search.</p>
-              <button onClick={clearFilters} className="mt-3 text-sm text-blue-600 hover:underline">
+              <button onClick={clearFilters} className="mt-3 text-sm text-emerald-600 hover:underline dark:text-emerald-400">
                 Clear filters
               </button>
             </>
@@ -207,7 +207,7 @@ export default function ShopBrowser({ shop, initialResult, initialCategories }: 
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="rounded-md border border-slate-300 px-3 py-1 hover:bg-slate-100 disabled:opacity-40"
+              className="rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 transition-colors disabled:opacity-40"
             >
               Previous
             </button>
@@ -217,7 +217,7 @@ export default function ShopBrowser({ shop, initialResult, initialCategories }: 
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
-              className="rounded-md border border-slate-300 px-3 py-1 hover:bg-slate-100 disabled:opacity-40"
+              className="rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 transition-colors disabled:opacity-40"
             >
               Next
             </button>

@@ -229,7 +229,7 @@ export default function ProductList() {
     : 0;
 
   const inputClass =
-    "w-full rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 transition-all";
+    "w-full rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 transition-all";
 
   const viewButton = (
     mode: ViewMode,
@@ -242,7 +242,7 @@ export default function ProductList() {
       onClick={() => changeView(mode)}
       className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
         view === mode
-          ? "bg-white text-blue-600 shadow-xs dark:bg-slate-800 dark:text-blue-400"
+          ? "bg-white text-emerald-600 shadow-xs dark:bg-slate-800 dark:text-emerald-400"
           : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
       }`}
     >
@@ -307,7 +307,7 @@ export default function ProductList() {
           </button>
           <Link
             href="/products/add"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-blue-500/25 hover:bg-blue-700 active:scale-[0.98] transition-all"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-emerald-500/25 hover:bg-emerald-700 active:scale-[0.98] transition-all"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -324,7 +324,7 @@ export default function ProductList() {
       <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-200">
-            <svg className="h-4 w-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg className="h-4 w-4 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
             </svg>
             Filters & Sorting
@@ -332,7 +332,7 @@ export default function ProductList() {
           {hasFilters && (
             <button
               onClick={clearFilters}
-              className="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline dark:text-blue-400"
+              className="text-xs font-medium text-emerald-600 hover:text-emerald-700 hover:underline dark:text-emerald-400"
             >
               Reset filters
             </button>
@@ -464,7 +464,7 @@ export default function ProductList() {
               <p>No products match your filters.</p>
               <button
                 onClick={clearFilters}
-                className="mt-3 text-sm text-blue-600 hover:underline"
+                className="mt-3 text-sm text-emerald-600 hover:underline dark:text-emerald-400"
               >
                 Clear filters
               </button>
@@ -505,7 +505,7 @@ export default function ProductList() {
                     <td className="px-5 py-4 font-medium">
                       <Link
                         href={`/products/${p.id}`}
-                        className="flex items-center gap-3 text-slate-900 hover:text-blue-600 transition-colors dark:text-slate-100"
+                        className="flex items-center gap-3 text-slate-900 hover:text-emerald-600 transition-colors dark:text-slate-100"
                       >
                         <ProductThumb
                           fileName={p.imageFileName}
@@ -540,7 +540,7 @@ export default function ProductList() {
                       <div className="flex justify-end gap-2">
                         <Link
                           href={`/products/edit/${p.id}`}
-                          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition-colors dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                         >
                           Edit
                         </Link>
@@ -573,7 +573,7 @@ export default function ProductList() {
             </label>
             <select
               id="pageSize"
-              className="rounded-xl border border-slate-200/90 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 focus:border-blue-600 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+              className="rounded-xl border border-slate-200/90 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 focus:border-emerald-600 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
               value={pageSize}
               onChange={(e) => {
                 setPageSize(Number(e.target.value));

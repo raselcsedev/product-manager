@@ -77,14 +77,14 @@ export default function DashboardPage() {
             href="/pos"
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition-all dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
           >
-            <svg className="h-4 w-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg className="h-4 w-4 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l3-8H5.4M7 13L5.4 5M7 13l-2 4h13M9 20a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z" />
             </svg>
             Open POS
           </Link>
           <Link
             href="/products/add"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-blue-500/25 hover:bg-blue-700 active:scale-[0.98] transition-all"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-emerald-500/25 hover:bg-emerald-700 active:scale-[0.98] transition-all"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -105,7 +105,7 @@ export default function DashboardPage() {
               label="Total Products"
               value={String(summary.totalProducts)}
               sublabel="Catalog items"
-              iconBg="bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400"
+              iconBg="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400"
               icon={
                 <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
@@ -205,7 +205,7 @@ export default function DashboardPage() {
                 </span>
                 <h2 className="font-bold text-slate-900 dark:text-white">Products Requiring Restock</h2>
               </div>
-              <Link href="/products" className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline dark:text-blue-400">
+              <Link href="/products" className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 hover:underline dark:text-emerald-400">
                 View all inventory →
               </Link>
             </div>
@@ -227,7 +227,7 @@ export default function DashboardPage() {
                   <div key={p.id} className="flex items-center justify-between px-6 py-3.5 hover:bg-slate-50/70 transition-colors dark:hover:bg-slate-800/40">
                     <div className="flex items-center gap-3">
                       <div className="flex flex-col">
-                        <Link href={`/products/${p.id}`} className="font-semibold text-sm text-slate-800 hover:text-blue-600 transition-colors dark:text-slate-100">
+                        <Link href={`/products/${p.id}`} className="font-semibold text-sm text-slate-800 hover:text-emerald-600 transition-colors dark:text-slate-100">
                           {p.name}
                         </Link>
                         <span className="text-xs text-slate-400">ID: #{p.id}</span>
@@ -237,7 +237,7 @@ export default function DashboardPage() {
                       <StockBadge quantity={p.quantity} />
                       <Link
                         href={`/products/edit/${p.id}`}
-                        className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition-colors dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                       >
                         Update Stock
                       </Link>

@@ -18,7 +18,7 @@ export default function SaleDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const [voiding, setVoiding] = useState(false); // is the "void" form open?
+  const [voiding, setVoiding] = useState(false);
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -63,7 +63,7 @@ export default function SaleDetailPage() {
       setSale(updated);
       setVoiding(false);
       setReason("");
-      setSuccess("The sale was voided and the items are back in stock.");
+      setSuccess("The sale was voided and the items were returned to stock.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "The sale could not be voided.");
     } finally {
@@ -72,63 +72,78 @@ export default function SaleDetailPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md space-y-4">
-      <Link href="/sales" className="inline-block text-sm text-slate-600 hover:underline">
-        &larr; Back to sales
+    <div className="mx-auto max-w-xl space-y-6">
+      <Link
+        href="/sales"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+      >
+        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Back to sales list
       </Link>
 
       {success && <Alert type="success" message={success} />}
       {error && <Alert type="error" message={error} />}
-      {loading && <Spinner label="Loading the sale..." />}
+      {loading && <Spinner label="Loading sale transaction..." />}
 
       {sale && (
-        <>
+        <div className="space-y-6">
           <Receipt sale={sale} />
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={() => window.print()}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-emerald-500/25 hover:bg-emerald-700 active:scale-95 transition-all"
             >
-              Print receipt
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              </svg>
+              Print Receipt
             </button>
             {!sale.isVoided && !voiding && (
               <button
                 type="button"
                 onClick={() => setVoiding(true)}
-                className="rounded-md border border-red-200 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+                className="rounded-xl border border-rose-200 bg-white px-4 py-2 text-sm font-semibold text-rose-600 hover:bg-rose-50 dark:border-rose-900/60 dark:bg-slate-800 dark:text-rose-400 dark:hover:bg-rose-950/40 transition-colors"
               >
-                Void sale
+                Void Sale
               </button>
             )}
           </div>
 
           {voiding && !sale.isVoided && (
-            <form onSubmit={handleVoid} className="space-y-3 rounded-lg border border-red-200 bg-white p-4">
-              <p className="text-sm font-medium">Void this sale?</p>
-              <p className="text-sm text-slate-600">
-                The whole sale is cancelled and every item goes back into stock. It stays in your history, marked as voided.
-                This cannot be undone.
-              </p>
+            <form onSubmit={handleVoid} className="space-y-4 rounded-2xl border border-rose-200 dark:border-rose-900/60 bg-white dark:bg-slate-900 p-6 shadow-xs">
               <div>
-                <label htmlFor="voidReason" className="text-sm font-medium">Reason *</label>
+                <h3 className="text-base font-bold text-rose-600 dark:text-rose-400">Void This Transaction?</h3>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  The sale will be cancelled and item quantities will be restocked to inventory. This audit entry is permanent.
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="voidReason" className="block text-xs font-semibold text-slate-600 dark:text-slate-400">
+                  Reason for voiding *
+                </label>
                 <textarea
                   id="voidReason"
                   rows={2}
                   maxLength={200}
-                  className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                  placeholder="e.g. Customer refund, incorrect item rung up"
+                  className="mt-1.5 w-full rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 transition-all"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                 />
               </div>
-              <div className="flex gap-2">
+
+              <div className="flex gap-2.5 pt-2">
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
+                  className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60 transition-colors"
                 >
-                  {saving ? "Voiding..." : "Void sale"}
+                  {saving ? "Voiding..." : "Confirm Void"}
                 </button>
                 <button
                   type="button"
@@ -136,14 +151,14 @@ export default function SaleDetailPage() {
                     setVoiding(false);
                     setReason("");
                   }}
-                  className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-100"
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 transition-colors"
                 >
                   Cancel
                 </button>
               </div>
             </form>
           )}
-        </>
+        </div>
       )}
     </div>
   );

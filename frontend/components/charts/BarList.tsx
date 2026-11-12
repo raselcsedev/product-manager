@@ -22,13 +22,13 @@ export default function BarList({ items, format }: BarListProps) {
         return (
           <li key={item.label}>
             <div className="flex items-baseline justify-between gap-3 text-sm">
-              <span className="truncate font-medium">{item.label}</span>
-              <span className="shrink-0 text-slate-700">{format(item.value)}</span>
+              <span className="truncate font-medium text-slate-800 dark:text-slate-200">{item.label}</span>
+              <span className="shrink-0 font-semibold text-slate-900 dark:text-slate-100">{format(item.value)}</span>
             </div>
-            <div className="mt-1 h-2.5 w-full rounded-full bg-slate-100">
-              <div className="h-2.5 rounded-full bg-blue-600" style={{ width: `${percent}%` }} />
+            <div className="mt-1 h-2.5 w-full rounded-full bg-slate-100 dark:bg-slate-800">
+              <div className="h-2.5 rounded-full bg-emerald-600 dark:bg-emerald-500 transition-all duration-500" style={{ width: `${percent}%` }} />
             </div>
-            {item.detail && <p className="mt-1 text-xs text-slate-500">{item.detail}</p>}
+            {item.detail && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.detail}</p>}
           </li>
         );
       })}
