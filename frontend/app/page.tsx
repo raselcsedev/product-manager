@@ -6,6 +6,7 @@ import Alert from "@/components/Alert";
 import BarList from "@/components/charts/BarList";
 import DonutChart from "@/components/charts/DonutChart";
 import Spinner from "@/components/Spinner";
+import StockBadge from "@/components/StockBadge";
 import { useAuth } from "@/context/AuthContext";
 import { getDashboardCharts, getProductSummary } from "@/lib/api";
 import { DashboardCharts } from "@/types/dashboard";
@@ -14,11 +15,25 @@ import { ProductSummary } from "@/types/product";
 const money = (n: number) =>
   n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-function StatCard({ label, value }: { label: string; value: string }) {
+interface StatCardProps {
+  label: string;
+  value: string;
+  sublabel?: string;
+  icon: React.ReactNode;
+  iconBg: string;
+}
+
+function StatCard({ label, value, sublabel, icon, iconBg }: StatCardProps) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-5">
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="mt-2 text-2xl font-semibold">{value}</p>
+    <div className="flex items-center justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs hover:shadow-md transition-all duration-200 dark:border-slate-800 dark:bg-slate-900">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</p>
+        <p className="mt-2 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{value}</p>
+        {sublabel && <p className="mt-1 text-xs text-slate-400">{sublabel}</p>}
+      </div>
+      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${iconBg}`}>
+        {icon}
+      </div>
     </div>
   );
 }
@@ -33,7 +48,6 @@ export default function DashboardPage() {
   useEffect(() => {
     async function load() {
       try {
-        // Both requests run at the same time, so the page loads faster.
         const [s, c] = await Promise.all([getProductSummary(), getDashboardCharts()]);
         setSummary(s);
         setCharts(c);
@@ -48,59 +62,125 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Welcome Banner */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Welcome back, {user?.name}</h1>
-          <p className="text-sm text-slate-500">These numbers include only the products you created.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+            Welcome back, {user?.name}
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Overview of your store performance and inventory health.
+          </p>
         </div>
-        <Link
-          href="/products/add"
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          Add product
-        </Link>
+        <div className="flex items-center gap-2.5">
+          <Link
+            href="/pos"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition-all dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
+          >
+            <svg className="h-4 w-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l3-8H5.4M7 13L5.4 5M7 13l-2 4h13M9 20a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z" />
+            </svg>
+            Open POS
+          </Link>
+          <Link
+            href="/products/add"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-blue-500/25 hover:bg-blue-700 active:scale-[0.98] transition-all"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Add product
+          </Link>
+        </div>
       </div>
 
       {error && <Alert type="error" message={error} />}
-      {loading && <Spinner label="Loading dashboard..." />}
+      {loading && <Spinner label="Loading dashboard metrics..." />}
 
       {summary && charts && (
         <>
-          {/* Numbers */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Total products" value={String(summary.totalProducts)} />
-            <StatCard label="Units in stock" value={summary.totalUnits.toLocaleString()} />
-            <StatCard label="Inventory value" value={money(summary.inventoryValue)} />
-            <StatCard label={`Low stock (under ${summary.lowStockLimit})`} value={String(summary.lowStockCount)} />
+          {/* Stat Cards Grid */}
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              label="Total Products"
+              value={String(summary.totalProducts)}
+              sublabel="Catalog items"
+              iconBg="bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400"
+              icon={
+                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+              }
+            />
+            <StatCard
+              label="Units In Stock"
+              value={summary.totalUnits.toLocaleString()}
+              sublabel="Total available units"
+              iconBg="bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400"
+              icon={
+                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                </svg>
+              }
+            />
+            <StatCard
+              label="Inventory Value"
+              value={`$${money(summary.inventoryValue)}`}
+              sublabel="Retail pricing valuation"
+              iconBg="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400"
+              icon={
+                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              }
+            />
+            <StatCard
+              label="Low Stock Alerts"
+              value={String(summary.lowStockCount)}
+              sublabel={`Threshold < ${summary.lowStockLimit} units`}
+              iconBg="bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400"
+              icon={
+                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              }
+            />
           </div>
 
-          {/* Charts */}
-          <div className="grid gap-4 lg:grid-cols-3">
-            <section className="rounded-lg border border-slate-200 bg-white p-5">
-              <h2 className="mb-4 font-medium">Stock status</h2>
+          {/* Charts Section */}
+          <div className="grid gap-6 lg:grid-cols-3">
+            <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+              <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3 dark:border-slate-800">
+                <h2 className="font-bold text-slate-900 dark:text-white">Stock Status Breakdown</h2>
+              </div>
               {summary.totalProducts === 0 ? (
-                <p className="py-8 text-center text-sm text-slate-600">No products yet, so there is nothing to chart.</p>
+                <p className="py-12 text-center text-sm text-slate-400">No products available to chart.</p>
               ) : (
-                <DonutChart
-                  centerValue={String(summary.totalProducts)}
-                  centerLabel="products"
-                  slices={[
-                    { label: "In stock", value: charts.stockStatus.inStock, color: "#10b981" },
-                    {
-                      label: `Low stock (under ${charts.stockStatus.lowStockLimit})`,
-                      value: charts.stockStatus.lowStock,
-                      color: "#f59e0b",
-                    },
-                    { label: "Out of stock", value: charts.stockStatus.outOfStock, color: "#ef4444" },
-                  ]}
-                />
+                <div className="py-2">
+                  <DonutChart
+                    centerValue={String(summary.totalProducts)}
+                    centerLabel="products"
+                    slices={[
+                      { label: "In stock", value: charts.stockStatus.inStock, color: "#10b981" },
+                      {
+                        label: `Low stock (< ${charts.stockStatus.lowStockLimit})`,
+                        value: charts.stockStatus.lowStock,
+                        color: "#f59e0b",
+                      },
+                      { label: "Out of stock", value: charts.stockStatus.outOfStock, color: "#ef4444" },
+                    ]}
+                  />
+                </div>
               )}
             </section>
 
-            <section className="rounded-lg border border-slate-200 bg-white p-5 lg:col-span-2">
-              <h2 className="mb-4 font-medium">Inventory value by category</h2>
+            <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs lg:col-span-2 dark:border-slate-800 dark:bg-slate-900">
+              <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3 dark:border-slate-800">
+                <h2 className="font-bold text-slate-900 dark:text-white">Inventory Value by Category</h2>
+                <span className="text-xs text-slate-400">Ranked by total valuation</span>
+              </div>
               {charts.categories.length === 0 ? (
-                <p className="py-8 text-center text-sm text-slate-600">No products yet, so there is nothing to chart.</p>
+                <p className="py-12 text-center text-sm text-slate-400">No category data available.</p>
               ) : (
                 <BarList
                   format={money}
@@ -114,42 +194,57 @@ export default function DashboardPage() {
             </section>
           </div>
 
-          {/* Restock list */}
-          <section className="rounded-lg border border-slate-200 bg-white">
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-              <h2 className="font-medium">Products that need restocking</h2>
-              <Link href="/products" className="text-sm text-blue-600 hover:underline">
-                View all products
+          {/* Restock Attention List */}
+          <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </span>
+                <h2 className="font-bold text-slate-900 dark:text-white">Products Requiring Restock</h2>
+              </div>
+              <Link href="/products" className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline dark:text-blue-400">
+                View all inventory →
               </Link>
             </div>
 
             {summary.totalProducts === 0 ? (
-              <p className="px-5 py-8 text-center text-sm text-slate-600">
-                You have no products yet. Add your first product to see stats here.
+              <p className="px-6 py-10 text-center text-sm text-slate-400">
+                You have no products yet. Add products to track stock health here.
               </p>
             ) : summary.lowStock.length === 0 ? (
-              <p className="px-5 py-8 text-center text-sm text-slate-600">
-                Every product has at least {summary.lowStockLimit} units in stock.
-              </p>
+              <div className="px-6 py-10 text-center text-sm text-slate-500">
+                <svg className="mx-auto h-8 w-8 text-emerald-500 mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                All products meet healthy stock levels (above {summary.lowStockLimit} units).
+              </div>
             ) : (
-              <ul className="divide-y divide-slate-100">
+              <div className="divide-y divide-slate-100 dark:divide-slate-800">
                 {summary.lowStock.map((p) => (
-                  <li key={p.id} className="flex items-center justify-between px-5 py-3 text-sm">
-                    <div>
-                      <p className="font-medium">{p.name}</p>
-                      <p className="text-slate-500">
-                        {p.quantity === 0 ? "Out of stock" : `${p.quantity} left`}
-                      </p>
+                  <div key={p.id} className="flex items-center justify-between px-6 py-3.5 hover:bg-slate-50/70 transition-colors dark:hover:bg-slate-800/40">
+                    <div className="flex items-center gap-3">
+                      <div className="flex flex-col">
+                        <Link href={`/products/${p.id}`} className="font-semibold text-sm text-slate-800 hover:text-blue-600 transition-colors dark:text-slate-100">
+                          {p.name}
+                        </Link>
+                        <span className="text-xs text-slate-400">ID: #{p.id}</span>
+                      </div>
                     </div>
-                    <Link
-                      href={`/products/edit/${p.id}`}
-                      className="rounded-md border border-slate-300 px-3 py-1 hover:bg-slate-100"
-                    >
-                      Edit
-                    </Link>
-                  </li>
+                    <div className="flex items-center gap-4">
+                      <StockBadge quantity={p.quantity} />
+                      <Link
+                        href={`/products/edit/${p.id}`}
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                      >
+                        Update Stock
+                      </Link>
+                    </div>
+                  </div>
                 ))}
-              </ul>
+              </div>
             )}
           </section>
         </>

@@ -68,3 +68,12 @@
 
 .dark .bg-purple-100 { background-color: rgb(88 28 135 / 0.5); }
 .dark .text-purple-800 { color: rgb(233 213 255); }
+
+/* Hide scrollbar for clean chip/pill sliders */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

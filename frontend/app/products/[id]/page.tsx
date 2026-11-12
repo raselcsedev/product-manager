@@ -16,9 +16,9 @@ const money = (n: number) =>
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-slate-200 p-3">
-      <p className="text-xs text-slate-500">{label}</p>
-      <p className="mt-1 text-lg font-semibold">{value}</p>
+    <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-800/40">
+      <p className="text-xs font-semibold text-slate-400">{label}</p>
+      <p className="mt-1 text-lg font-bold text-slate-900 dark:text-white">{value}</p>
     </div>
   );
 }
@@ -74,76 +74,87 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
-      <Link href="/products" className="inline-block text-sm text-slate-600 hover:underline">
-        &larr; Back to products
+    <div className="mx-auto max-w-4xl space-y-6">
+      <Link
+        href="/products"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-blue-600 transition-colors"
+      >
+        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Back to products
       </Link>
 
       {error && <Alert type="error" message={error} />}
       {loading && <Spinner label="Loading product..." />}
 
       {product && (
-        <div className="grid gap-6 rounded-lg border border-slate-200 bg-white p-6 md:grid-cols-2">
+        <div className="grid gap-8 rounded-2xl border border-slate-200/80 bg-white p-6 md:p-8 shadow-xs md:grid-cols-2 dark:border-slate-800 dark:bg-slate-900">
           <div>
-            <ProductThumb fileName={product.imageFileName} name={product.name} size="fill" />
+            <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-100 aspect-square dark:border-slate-800 dark:bg-slate-800">
+              <ProductThumb fileName={product.imageFileName} name={product.name} size="fill" className="h-full w-full object-cover" />
+            </div>
             {!product.imageFileName && (
-              <p className="mt-2 text-xs text-slate-500">
-                No image yet.{" "}
+              <p className="mt-2 text-xs text-slate-400 text-center">
+                No product image uploaded.{" "}
                 <Link href={`/products/edit/${product.id}`} className="text-blue-600 hover:underline">
-                  Add one
+                  Upload image
                 </Link>
               </p>
             )}
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div>
-              <p className="text-xs text-slate-500">Product #{product.id}</p>
-              <h1 className="text-2xl font-semibold">{product.name}</h1>
+              <p className="font-mono text-xs text-slate-400">Product #{product.id}</p>
+              <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{product.name}</h1>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
               {product.category ? (
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
+                <span className="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                   {product.category.name}
                 </span>
               ) : (
-                <span className="text-xs text-slate-400">No category</span>
+                <span className="text-xs text-slate-400">Uncategorized</span>
               )}
               <StockBadge quantity={product.quantity} />
               {product.isPublished ? (
                 <PublicPill />
               ) : (
-                <span className="text-xs text-slate-400">Private</span>
+                <span className="rounded-md border border-slate-200 px-2 py-0.5 text-xs text-slate-400 dark:border-slate-700">Private</span>
               )}
             </div>
 
             <div className="grid grid-cols-3 gap-3">
-              <Stat label="Price" value={money(product.price)} />
+              <Stat label="Price" value={`$${money(product.price)}`} />
               <Stat label="Quantity" value={product.quantity.toLocaleString()} />
-              <Stat label="Stock value" value={money(product.price * product.quantity)} />
+              <Stat label="Total Value" value={`$${money(product.price * product.quantity)}`} />
             </div>
 
-            <div>
-              <h2 className="text-sm font-medium">Description</h2>
+            <div className="border-t border-slate-100 pt-4 dark:border-slate-800">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Description</h2>
               {product.description ? (
-                <p className="mt-1 whitespace-pre-line text-sm text-slate-600">{product.description}</p>
+                <p className="mt-2 whitespace-pre-line text-sm text-slate-600 leading-relaxed dark:text-slate-300">{product.description}</p>
               ) : (
-                <p className="mt-1 text-sm text-slate-400">No description.</p>
+                <p className="mt-2 text-xs text-slate-400">No description provided for this product.</p>
               )}
             </div>
 
-            <div className="flex flex-wrap gap-2 pt-2">
+            <div className="flex flex-wrap gap-2.5 pt-4 border-t border-slate-100 dark:border-slate-800">
               <Link
                 href={`/products/edit/${product.id}`}
-                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-500/25 hover:bg-blue-700 active:scale-95 transition-all"
               >
-                Edit
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Edit product
               </Link>
               {product.isPublished && (
                 <Link
                   href={`/shop/${product.id}`}
-                  className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium hover:bg-slate-100"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                 >
                   View in shop
                 </Link>
@@ -152,8 +163,11 @@ export default function ProductDetailPage() {
                 type="button"
                 onClick={handleDelete}
                 disabled={deleting}
-                className="rounded-md border border-red-200 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors disabled:opacity-60 dark:border-red-900/60 dark:bg-slate-800 dark:text-red-400"
               >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
                 {deleting ? "Deleting..." : "Delete"}
               </button>
             </div>

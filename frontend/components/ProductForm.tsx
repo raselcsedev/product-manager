@@ -153,10 +153,10 @@ export default function ProductForm({ initialValues, submitLabel, onSubmit }: Pr
   }
 
   const inputClass =
-    "mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600";
+    "mt-1 w-full rounded-xl border border-slate-200/90 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 transition-all";
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-5 rounded-lg border border-slate-200 bg-white p-6">
+    <form onSubmit={handleSubmit} noValidate className="space-y-6 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
       {submitError && <Alert type="error" message={submitError} />}
 
       <div>
@@ -271,17 +271,17 @@ export default function ProductForm({ initialValues, submitLabel, onSubmit }: Pr
       </div>
 
       {/* Public shop */}
-      <div className="rounded-md border border-slate-200 p-4">
+      <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/40">
         <label className="flex cursor-pointer items-start gap-3 text-sm">
           <input
             type="checkbox"
             checked={isPublished}
             onChange={(e) => setIsPublished(e.target.checked)}
-            className="mt-1 h-4 w-4"
+            className="mt-1 h-4 w-4 rounded text-blue-600 focus:ring-blue-500"
           />
           <span>
-            <span className="font-medium">Show on the public shop</span>
-            <span className="block text-slate-500">
+            <span className="font-semibold text-slate-900 dark:text-slate-100">Show on the public shop</span>
+            <span className="block mt-0.5 text-xs text-slate-500 dark:text-slate-400">
               Anyone, even without an account, can then see this product&apos;s name, description, price, image and
               category. Your exact stock quantity stays private (visitors only see In stock, Low stock or Out of stock).
             </span>
@@ -289,15 +289,15 @@ export default function ProductForm({ initialValues, submitLabel, onSubmit }: Pr
         </label>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 pt-2">
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-500/25 hover:bg-blue-700 active:scale-[0.98] transition-all disabled:opacity-60"
         >
-          {submitting ? "Saving..." : submitLabel}
+          {submitting ? "Saving product..." : submitLabel}
         </button>
-        <Link href="/products" className="text-sm text-slate-600 hover:underline">
+        <Link href="/products" className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
           Cancel
         </Link>
       </div>

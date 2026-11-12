@@ -48,8 +48,11 @@ export default function EditProductPage() {
   }
 
   return (
-    <div className="mx-auto max-w-xl space-y-4">
-      <h1 className="text-2xl font-semibold">Edit product</h1>
+    <div className="mx-auto max-w-3xl space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Edit product</h1>
+        <p className="mt-1 text-sm text-slate-500">Update product details, pricing and inventory levels.</p>
+      </div>
       {loading && <Spinner label="Loading product..." />}
       {error && <Alert type="error" message={error} />}
       {product && <ProductForm initialValues={product} submitLabel="Save changes" onSubmit={handleUpdate} />}
